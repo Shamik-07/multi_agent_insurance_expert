@@ -7,8 +7,17 @@ authors = [
     { name = "shamik", email = "39588365+Shamik-07@users.noreply.github.com" }
 ]
 requires-python = ">=3.12"
-dependencies = []
+dependencies = [
+    "crawlee[all]>=0.6.9",
+    "huggingface-hub>=0.32.0",
+    "llama-index>=0.12.37",
+    "smolagents>=1.16.1",
+]
 
-[build-system]
-requires = ["hatchling"]
-build-backend = "hatchling.build"
+
+[dependency-groups]
+dev = [
+    "jupyter>=1.1.1",
+    "pyrefly>=0.16.2",
+    "ruff>=0.11.11",
+]
