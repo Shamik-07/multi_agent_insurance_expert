@@ -8,9 +8,16 @@ authors = [
 ]
 requires-python = ">=3.12"
 dependencies = [
+    "beautifulsoup4>=4.13.4",
     "crawlee[all]>=0.6.9",
+    "duckduckgo-search>=8.0.2",
     "huggingface-hub>=0.32.0",
     "llama-index>=0.12.37",
+    "llama-index-llms-huggingface-api>=0.4.3",
+    "llama-index-tools-playwright>=0.2.0",
+    "markdownify>=1.1.0",
+    "python-dotenv>=1.1.0",
+    "requests>=2.32.3",
     "smolagents>=1.16.1",
 ]
 
