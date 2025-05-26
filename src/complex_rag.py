@@ -10,8 +10,7 @@ from io import BytesIO
 
 import numpy as np
 import torch
-from colpali_engine.models import ColPali
-from colpali_engine.models.paligemma.colpali.processing_colpali import ColPaliProcessor
+from colpali_engine.models import ColPali, ColPaliProcessor, ColQwen2_5, ColQwen2_5_Processor
 from colpali_engine.utils.torch_utils import ListDataset, get_torch_device
 from dotenv import find_dotenv, load_dotenv
 from openai import OpenAI
@@ -28,16 +27,19 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # %%
-model_name = "vidore/colpali-v1.2"
+model_name = "vidore/colqwen2.5-v0.2"
+# model_name = "vidore/colpali-v1.2"
 device = get_torch_device("cuda")
 
-model = ColPali.from_pretrained(
-    model_name,
+model = ColQwen2_5.from_pretrained(
+# model = ColPali.from_pretrained(
+    pretrained_model_name_or_path=model_name,
     torch_dtype=torch.bfloat16,
     device_map=device,
 ).eval()
 
-processor = ColPaliProcessor.from_pretrained(
+processor = ColQwen2_5_Processor.from_pretrained(
+# processor = ColPaliProcessor.from_pretrained(
     pretrained_model_name_or_path=model_name, use_fast=True
 )
 _ = load_dotenv(find_dotenv(raise_error_if_not_found=True))
