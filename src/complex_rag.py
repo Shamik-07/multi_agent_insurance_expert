@@ -24,6 +24,7 @@ from PIL import Image
 from pymilvus import DataType, MilvusClient
 from torch.utils.data import DataLoader
 from tqdm import tqdm
+from pathlib import Path
 
 from consts import PROJECT_ROOT_DIR, PROMPT
 
@@ -269,10 +270,11 @@ class Middleware:
             id (str): Unique identifier for the session/user.
             create_collection (bool, optional): Whether to create a new collection. Defaults to True.
         """
-        hashed_id = hashlib.md5(id.encode()).hexdigest()[:8]
-        milvus_db_name = f"milvus_{hashed_id}.db"
+        # hashed_id = hashlib.md5(id.encode()).hexdigest()[:8]
+        # milvus_db_name = f"milvus_{hashed_id}.db"
+        milvus_db_name = f"milvus_{id}.db"
         self.milvus_manager = MilvusManager(
-            milvus_db_name, "colpali", create_collection
+            milvus_db_name, f"{id}", create_collection
         )
         self.colpali_manager = ColpaliManager()
         self.pdf_manager = PdfManager()
@@ -347,7 +349,7 @@ class PdfManager:
         os.makedirs(output_folder)
 
     def save_images(
-        self, id, pdf_path, max_pages, pages: list[int] = None
+        self, id, pdf_path, max_pages, pages: list[int] = None, output_folder=None
     ) -> list[str]:
         """
         Saves images of PDF pages to disk.
@@ -361,14 +363,20 @@ class PdfManager:
         Returns:
             list[str]: List of saved image file paths.
         """
-        output_folder = f"pages/{id}/"
-        images = convert_from_path(pdf_path)
+        output_folder = (
+            Path(output_folder) if output_folder is not None else output_folder
+        )
+        if output_folder is None:
+            output_folder = Path(f"pages/{id}/")
+        if not Path(output_folder).exists():
+            Path(output_folder).mkdir(parents=True, exist_ok=True)
+        images = convert_from_path(pdf_path=pdf_path)
 
         logger.info(
             f"Saving images from {pdf_path} to {output_folder}. Max pages: {max_pages}"
         )
 
-        self.clear_and_recreate_dir(output_folder)
+        # self.clear_and_recreate_dir(output_folder)
 
         num_page_processed = 0
 
@@ -379,15 +387,17 @@ class PdfManager:
             if pages and i not in pages:
                 continue
 
-            full_save_path = f"{output_folder}/page_{i + 1}.png"
+            full_save_path = output_folder / f"{id}_page_{i + 1}.png"
 
             # logger.debug(f"Saving image to {full_save_path}")
 
-            image.save(full_save_path, "PNG")
+            image.save(fp=full_save_path, format="PNG")
 
             num_page_processed += 1
 
-        return [f"{output_folder}/page_{i + 1}.png" for i in range(num_page_processed)]
+        return [
+            f"{output_folder}/{id}_page_{i + 1}.png" for i in range(num_page_processed)
+        ]
 
 
 # %%
@@ -614,3 +624,11 @@ def main():
 # %%
 if __name__ == "__main__":
     main()
+
+# %%
+app = PDFSearchApp()
+# %%
+for idx,f in enumerate((PROJECT_ROOT_DIR/"data/policy_wordings").iterdir()):
+    if idx==0:
+        middleware = Middleware(id="policy_wordings", create_collection=True)
+    pages = middleware.index(pdf_path=f, id=f.name, max_pages=200)
