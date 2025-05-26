@@ -632,3 +632,39 @@ for idx,f in enumerate((PROJECT_ROOT_DIR/"data/policy_wordings").iterdir()):
     if idx==0:
         middleware = Middleware(id="policy_wordings", create_collection=True)
     pages = middleware.index(pdf_path=f, id=f.name, max_pages=200)
+# %%
+query = "what critical illnesses are covered under optima restore?"
+query_vec = middleware.colpali_manager.process_text([query])[0]
+search_res = middleware.milvus_manager.search(query_vec, topk=5)
+# %%
+middleware.milvus_manager.client.query(collection_name="policy_wordings",
+                                       filter="doc_id == 45",
+                                       output_fields=["doc"])
+# %%
+search_params = {"metric_type": "IP", "params": {}}
+results = middleware.milvus_manager.client.search(
+    collection_name="policy_wordings",
+    data=query_vec,
+    limit=2,
+    output_fields=["vector", "seq_id", "doc_id", "doc"],
+    search_params=search_params,
+)
+# %%
+results[0][1]
+# %%
+a = middleware.milvus_manager.client.query(
+    collection_name="policy_wordings", filter="doc_id == 45", output_fields=["doc"]
+)
+
+# %%
+a[3]
+# %%
+middleware.milvus_manager.client.query(
+    collection_name="policy_wordings",
+    filter="pk == 458295805050210631",
+    output_fields=["doc", "doc_id"],
+)
+# %%
+# We have to change the search to search by pk and not doc_id
+
+# %%
