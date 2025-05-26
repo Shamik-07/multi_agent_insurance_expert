@@ -1,0 +1,608 @@
+# %%
+import base64
+import concurrent.futures
+import hashlib
+import logging
+import os
+import shutil
+import uuid
+from io import BytesIO
+
+import numpy as np
+import torch
+from colpali_engine.models import ColPali
+from colpali_engine.models.paligemma.colpali.processing_colpali import ColPaliProcessor
+from colpali_engine.utils.torch_utils import ListDataset, get_torch_device
+from dotenv import find_dotenv, load_dotenv
+from openai import OpenAI
+from pdf2image import convert_from_path
+from PIL import Image
+from pymilvus import DataType, MilvusClient
+from torch.utils.data import DataLoader
+from tqdm import tqdm
+
+from consts import PROJECT_ROOT_DIR, PROMPT
+
+# Setup logger
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+# %%
+model_name = "vidore/colpali-v1.2"
+device = get_torch_device("cuda")
+
+model = ColPali.from_pretrained(
+    model_name,
+    torch_dtype=torch.bfloat16,
+    device_map=device,
+).eval()
+
+processor = ColPaliProcessor.from_pretrained(
+    pretrained_model_name_or_path=model_name, use_fast=True
+)
+_ = load_dotenv(find_dotenv(raise_error_if_not_found=True))
+openai_client = OpenAI()
+
+
+# %%
+class MilvusManager:
+    def __init__(self, milvus_uri, collection_name, create_collection, dim=128):
+        """
+        Initializes the MilvusManager.
+
+        Args:
+            milvus_uri (str): URI for Milvus server.
+            collection_name (str): Name of the collection.
+            create_collection (bool): Whether to create a new collection.
+            dim (int, optional): Dimension of the vector. Defaults to 128.
+        """
+        self.client = MilvusClient(uri=milvus_uri)
+        self.collection_name = collection_name
+        if self.client.has_collection(collection_name=self.collection_name):
+            self.client.load_collection(collection_name)
+        self.dim = dim
+
+        if create_collection:
+            self.create_collection()
+            self.create_index()
+
+    def create_collection(self):
+        """
+        Creates a new collection in Milvus. Drops existing collection if present.
+        """
+        if self.client.has_collection(collection_name=self.collection_name):
+            self.client.drop_collection(collection_name=self.collection_name)
+        schema = self.client.create_schema(
+            auto_id=True,
+            enable_dynamic_fields=True,
+        )
+        schema.add_field(field_name="pk", datatype=DataType.INT64, is_primary=True)
+        schema.add_field(
+            field_name="vector", datatype=DataType.FLOAT_VECTOR, dim=self.dim
+        )
+        schema.add_field(field_name="seq_id", datatype=DataType.INT16)
+        schema.add_field(field_name="doc_id", datatype=DataType.INT64)
+        schema.add_field(field_name="doc", datatype=DataType.VARCHAR, max_length=65535)
+
+        self.client.create_collection(
+            collection_name=self.collection_name, schema=schema
+        )
+
+    def create_index(self):
+        """
+        Creates a vector index for the collection in Milvus.
+        """
+        self.client.release_collection(collection_name=self.collection_name)
+        self.client.drop_index(
+            collection_name=self.collection_name, index_name="vector"
+        )
+        index_params = self.client.prepare_index_params()
+        index_params.add_index(
+            field_name="vector",
+            index_name="vector_index",
+            index_type="FLAT",
+            metric_type="IP",
+            params={
+                "M": 16,
+                "efConstruction": 500,
+            },
+        )
+
+        self.client.create_index(
+            collection_name=self.collection_name, index_params=index_params, sync=True
+        )
+
+    def create_scalar_index(self):
+        """
+        Creates a scalar index for the doc_id field in Milvus.
+        """
+        self.client.release_collection(collection_name=self.collection_name)
+
+        index_params = self.client.prepare_index_params()
+        index_params.add_index(
+            field_name="doc_id",
+            index_name="int32_index",
+            index_type="INVERTED",
+        )
+
+        self.client.create_index(
+            collection_name=self.collection_name, index_params=index_params, sync=True
+        )
+
+    def search(self, data, topk):
+        """
+        Searches for the top-k most similar documents in Milvus.
+
+        Args:
+            data (np.ndarray): Query vector.
+            topk (int): Number of top results to return.
+
+        Returns:
+            list: List of (score, doc_id) tuples.
+        """
+        search_params = {"metric_type": "IP", "params": {}}
+        results = self.client.search(
+            self.collection_name,
+            data,
+            limit=50,
+            output_fields=["vector", "seq_id", "doc_id"],
+            search_params=search_params,
+        )
+        doc_ids = set()
+        for r_id in range(len(results)):
+            for r in range(len(results[r_id])):
+                doc_ids.add(results[r_id][r]["entity"]["doc_id"])
+
+        scores = []
+
+        def rerank_single_doc(doc_id, data, client, collection_name):
+            doc_colbert_vecs = client.query(
+                collection_name=collection_name,
+                filter=f"doc_id in [{doc_id}, {doc_id + 1}]",
+                output_fields=["seq_id", "vector", "doc"],
+                limit=1000,
+            )
+            doc_vecs = np.vstack(
+                [doc_colbert_vecs[i]["vector"] for i in range(len(doc_colbert_vecs))]
+            )
+            score = np.dot(data, doc_vecs.T).max(1).sum()
+            return (score, doc_id)
+
+        with concurrent.futures.ThreadPoolExecutor(max_workers=300) as executor:
+            futures = {
+                executor.submit(
+                    rerank_single_doc, doc_id, data, self.client, self.collection_name
+                ): doc_id
+                for doc_id in doc_ids
+            }
+            for future in concurrent.futures.as_completed(futures):
+                score, doc_id = future.result()
+                scores.append((score, doc_id))
+
+        scores.sort(key=lambda x: x[0], reverse=True)
+        if len(scores) >= topk:
+            return scores[:topk]
+        else:
+            return scores
+
+    def insert(self, data):
+        """
+        Inserts a document's vectors and metadata into Milvus.
+
+        Args:
+            data (dict): Dictionary containing 'colbert_vecs', 'doc_id', and 'filepath'.
+        """
+        colbert_vecs = [vec for vec in data["colbert_vecs"]]
+        seq_length = len(colbert_vecs)
+        doc_ids = [data["doc_id"] for i in range(seq_length)]
+        seq_ids = list(range(seq_length))
+        docs = [""] * seq_length
+        docs[0] = data["filepath"]
+
+        self.client.insert(
+            self.collection_name,
+            [
+                {
+                    "vector": colbert_vecs[i],
+                    "seq_id": seq_ids[i],
+                    "doc_id": doc_ids[i],
+                    "doc": docs[i],
+                }
+                for i in range(seq_length)
+            ],
+        )
+
+    def get_images_as_doc(self, images_with_vectors: list):
+        """
+        Converts a list of image vectors and filepaths into Milvus insertable format.
+
+        Args:
+            images_with_vectors (list): List of dicts with 'colbert_vecs' and 'filepath'.
+
+        Returns:
+            list: List of dicts ready for Milvus insertion.
+        """
+        images_data = []
+
+        for i in range(len(images_with_vectors)):
+            data = {
+                "colbert_vecs": images_with_vectors[i]["colbert_vecs"],
+                "doc_id": i,
+                "filepath": images_with_vectors[i]["filepath"],
+            }
+            images_data.append(data)
+
+        return images_data
+
+    def insert_images_data(self, image_data):
+        """
+        Inserts multiple images' data into Milvus.
+
+        Args:
+            image_data (list): List of image data dicts.
+        """
+        data = self.get_images_as_doc(image_data)
+
+        for i in range(len(data)):
+            self.insert(data[i])
+
+
+# %%
+class Middleware:
+    def __init__(
+        self,
+        id: str,
+        create_collection=True,
+    ):
+        """
+        Initializes the Middleware with Milvus, Colpali, and PDF managers.
+
+        Args:
+            id (str): Unique identifier for the session/user.
+            create_collection (bool, optional): Whether to create a new collection. Defaults to True.
+        """
+        hashed_id = hashlib.md5(id.encode()).hexdigest()[:8]
+        milvus_db_name = f"milvus_{hashed_id}.db"
+        self.milvus_manager = MilvusManager(
+            milvus_db_name, "colpali", create_collection
+        )
+        self.colpali_manager = ColpaliManager()
+        self.pdf_manager = PdfManager()
+
+    def index(
+        self,
+        pdf_path: str,
+        id: str,
+        max_pages: int,
+    ):
+        """
+        Indexes a PDF file by converting pages to images, embedding them, and storing in Milvus.
+
+        Args:
+            pdf_path (str): Path to the PDF file.
+            id (str): Unique identifier.
+            max_pages (int): Maximum number of pages to process.
+
+        Returns:
+            list: List of saved image paths.
+        """
+        logger.info(f"Indexing {pdf_path}, id: {id}, max_pages: {max_pages}")
+
+        image_paths = self.pdf_manager.save_images(id, pdf_path, max_pages)
+
+        logger.info(f"Saved {len(image_paths)} images")
+
+        colbert_vecs = self.colpali_manager.process_images(image_paths)
+
+        images_data = [
+            {"colbert_vecs": colbert_vecs[i], "filepath": image_paths[i]}
+            for i in range(len(image_paths))
+        ]
+
+        logger.info(f"Inserting {len(images_data)} images data to Milvus")
+
+        self.milvus_manager.insert_images_data(images_data)
+
+        logger.info("Indexing completed")
+
+        return image_paths
+
+    def search(self, search_queries: list[str]):
+        logger.info(f"Searching for {len(search_queries)} queries")
+
+        final_res = []
+
+        for query in search_queries:
+            logger.info(f"Searching for query: {query}")
+            query_vec = self.colpali_manager.process_text([query])[0]
+            search_res = self.milvus_manager.search(query_vec, topk=1)
+            logger.info(f"Search result: {search_res} for query: {query}")
+            final_res.append(search_res)
+
+        return final_res
+
+
+# %%
+class PdfManager:
+    def __init__(self):
+        """
+        Initializes the PdfManager.
+        """
+        pass
+
+    def clear_and_recreate_dir(self, output_folder):
+        logger.info(f"Clearing output folder {output_folder}")
+
+        if os.path.exists(output_folder):
+            shutil.rmtree(output_folder)
+
+        os.makedirs(output_folder)
+
+    def save_images(
+        self, id, pdf_path, max_pages, pages: list[int] = None
+    ) -> list[str]:
+        """
+        Saves images of PDF pages to disk.
+
+        Args:
+            id (str): Unique identifier.
+            pdf_path (str): Path to the PDF file.
+            max_pages (int): Maximum number of pages to save.
+            pages (list[int], optional): Specific pages to save. Defaults to None.
+
+        Returns:
+            list[str]: List of saved image file paths.
+        """
+        output_folder = f"pages/{id}/"
+        images = convert_from_path(pdf_path)
+
+        logger.info(
+            f"Saving images from {pdf_path} to {output_folder}. Max pages: {max_pages}"
+        )
+
+        self.clear_and_recreate_dir(output_folder)
+
+        num_page_processed = 0
+
+        for i, image in enumerate(images):
+            if max_pages and num_page_processed >= max_pages:
+                break
+
+            if pages and i not in pages:
+                continue
+
+            full_save_path = f"{output_folder}/page_{i + 1}.png"
+
+            # logger.debug(f"Saving image to {full_save_path}")
+
+            image.save(full_save_path, "PNG")
+
+            num_page_processed += 1
+
+        return [f"{output_folder}/page_{i + 1}.png" for i in range(num_page_processed)]
+
+
+# %%
+class ColpaliManager:
+    def get_images(self, paths: list[str]) -> list[Image.Image]:
+        """
+        Loads images from file paths.
+
+        Args:
+            paths (list[str]): List of image file paths.
+
+        Returns:
+            list[Image.Image]: List of PIL Image objects.
+        """
+        return [Image.open(path) for path in paths]
+
+    def process_images(self, image_paths: list[str], batch_size=5):
+        logger.info(f"Processing {len(image_paths)} image_paths")
+
+        images = self.get_images(image_paths)
+
+        dataloader = DataLoader(
+            dataset=ListDataset[str](images),
+            batch_size=batch_size,
+            shuffle=False,
+            collate_fn=lambda x: processor.process_images(x),
+        )
+
+        ds: list[torch.Tensor] = []
+        for batch_doc in tqdm(dataloader):
+            with torch.no_grad():
+                batch_doc = {k: v.to(model.device) for k, v in batch_doc.items()}
+                embeddings_doc = model(**batch_doc)
+            ds.extend(list(torch.unbind(embeddings_doc.to(device))))
+
+        ds_np = [d.float().cpu().numpy() for d in ds]
+
+        return ds_np
+
+    def process_text(self, texts: list[str]):
+        logger.info(f"Processing {len(texts)} texts")
+
+        dataloader = DataLoader(
+            dataset=ListDataset[str](texts),
+            batch_size=1,
+            shuffle=False,
+            collate_fn=lambda x: processor.process_queries(x),
+        )
+
+        qs: list[torch.Tensor] = []
+        for batch_query in dataloader:
+            with torch.no_grad():
+                batch_query = {k: v.to(model.device) for k, v in batch_query.items()}
+                embeddings_query = model(**batch_query)
+
+            qs.extend(list(torch.unbind(embeddings_query.to(device))))
+
+        qs_np = [q.float().cpu().numpy() for q in qs]
+
+        return qs_np
+
+
+# %%
+def generate_uuid(state):
+    """
+    Generates or retrieves a UUID for the user session.
+
+    Args:
+        state (dict): State dictionary containing 'user_uuid'.
+
+    Returns:
+        str: UUID string.
+    """
+    # Check if UUID already exists in session state
+    if state["user_uuid"] is None:
+        # Generate a new UUID if not already set
+        state["user_uuid"] = str(uuid.uuid4())
+
+    return state["user_uuid"]
+
+
+class PDFSearchApp:
+    def __init__(self):
+        """
+        Initializes the PDFSearchApp.
+        """
+        self.indexed_docs = {}
+        self.current_pdf = None
+
+    def upload_and_convert(self, state, file, max_pages=100):
+        """
+        Uploads a PDF file, converts it to images, and indexes it.
+
+        Args:
+            state (dict): State dictionary for user session.
+            file: Uploaded file object.
+            max_pages (int, optional): Maximum number of pages to process. Defaults to 100.
+
+        Returns:
+            str: Status message.
+        """
+        id = generate_uuid(state)
+
+        if file is None:
+            return "No file uploaded"
+
+        logger.info(f"Uploading file: {file.name}, id: {id}")
+
+        try:
+            self.current_pdf = file.name
+
+            middleware = Middleware(id=id, create_collection=True)
+
+            pages = middleware.index(pdf_path=file, id=id, max_pages=max_pages)
+
+            self.indexed_docs[id] = True
+
+            return f"Uploaded and extracted {len(pages)} pages"
+        except Exception as e:
+            return f"Error processing PDF: {str(e)}"
+
+    def search_documents(self, state, query):
+        logger.info(f"Searching for query: {query}")
+        id = generate_uuid(state)
+
+        if not self.indexed_docs[id]:
+            logger.warning("Please index documents first")
+            return "Please index documents first", "--"
+        if not query:
+            logger.warning("Please enter a search query")
+            return "Please enter a search query", "--"
+
+        try:
+            middleware = Middleware(id, create_collection=False)
+
+            search_results = middleware.search([query])[0]
+
+            page_num = search_results[0][1] + 1
+
+            logger.info(f"Retrieved page number: {page_num}")
+
+            img_path = PROJECT_ROOT_DIR / f"pages/{id}/page_{page_num}.png"
+
+            logger.info(f"Retrieved image path: {img_path}")
+
+            rag_response = self.query_gpt4o_mini(query, [img_path])
+
+            return img_path, rag_response
+
+        except Exception as e:
+            return f"Error during search: {str(e)}", "--"
+
+    def encode_image_to_base64(self, image_path):
+        """
+        Encodes an image file to a base64 string.
+
+        Args:
+            image_path (str): Path to the image file.
+
+        Returns:
+            str: Base64 encoded image string.
+        """
+        """Encodes a PIL image to a base64 string."""
+        image = Image.open(image_path)
+        buffered = BytesIO()
+        image.save(buffered, format="JPEG")
+        return base64.b64encode(buffered.getvalue()).decode("utf-8")
+
+    def query_gpt4o_mini(self, query, image_path):
+        """
+        Queries the OpenAI GPT-4o-mini model with a query and images.
+
+        Args:
+            query (str): The user query.
+            image_path (list): List of image file paths.
+
+        Returns:
+            str: The AI response.
+        """
+        try:
+            base64_images = [self.encode_image_to_base64(pth) for pth in image_path]
+
+            response = openai_client.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=[
+                    {
+                        "role": "user",
+                        "content": [
+                            {"type": "text", "text": PROMPT.format(query=query)}
+                        ]
+                        + [
+                            {
+                                "type": "image_url",
+                                "image_url": {"url": f"data:image/jpeg;base64,{im}"},
+                            }
+                            for im in base64_images
+                        ],
+                    }
+                ],
+                max_tokens=500,
+            )
+            return response.choices[0].message.content
+        except Exception as err:
+            return f"Unable to generate the final output due to: {err}."
+
+
+# %%
+def main():
+    """
+    Main function for running the PDF search app in standalone mode.
+    """
+    user_id = {"user_uuid": None}
+    app = PDFSearchApp()
+    app.upload_and_convert(
+        state=user_id, file=PROJECT_ROOT_DIR / "data/PI-TOOL-WEB-SAMPLE.pdf"
+    )
+    logger.info(user_id)
+    _, response = app.search_documents(
+        state=user_id, query="what's JPGCCOMP allocation?"
+    )
+    logger.info(response)
+
+
+# %%
+if __name__ == "__main__":
+    main()
