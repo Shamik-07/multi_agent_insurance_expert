@@ -166,14 +166,14 @@ class MilvusManager:
         scores = []
 
         def rerank_single_doc(doc_id, data, client, collection_name):
-            doc_colbert_vecs = client.query(
+            doc_colqwen_vecs = client.query(
                 collection_name=collection_name,
                 filter=f"doc_id in [{doc_id}, {doc_id + 1}]",
                 output_fields=["seq_id", "vector", "doc"],
                 limit=1000,
             )
             doc_vecs = np.vstack(
-                [doc_colbert_vecs[i]["vector"] for i in range(len(doc_colbert_vecs))]
+                [doc_colqwen_vecs[i]["vector"] for i in range(len(doc_colqwen_vecs))]
             )
             score = np.dot(data, doc_vecs.T).max(1).sum()
             return (score, doc_id)
@@ -200,10 +200,10 @@ class MilvusManager:
         Inserts a document's vectors and metadata into Milvus.
 
         Args:
-            data (dict): Dictionary containing 'colbert_vecs', 'doc_id', and 'filepath'.
+            data (dict): Dictionary containing 'colqwen_vecs', 'doc_id', and 'filepath'.
         """
-        colbert_vecs = [vec for vec in data["colbert_vecs"]]
-        seq_length = len(colbert_vecs)
+        colqwen_vecs = [vec for vec in data["colqwen_vecs"]]
+        seq_length = len(colqwen_vecs)
         doc_ids = [data["doc_id"] for _ in range(seq_length)]
         seq_ids = list(range(seq_length))
         docs = [data["filepath"] for _ in range(seq_length)]
@@ -214,7 +214,7 @@ class MilvusManager:
             self.collection_name,
             [
                 {
-                    "vector": colbert_vecs[i],
+                    "vector": colqwen_vecs[i],
                     "seq_id": seq_ids[i],
                     "doc_id": doc_ids[i],
                     "doc": docs[i],
@@ -228,7 +228,7 @@ class MilvusManager:
         Converts a list of image vectors and filepaths into Milvus insertable format.
 
         Args:
-            images_with_vectors (list): List of dicts with 'colbert_vecs' and 'filepath'.
+            images_with_vectors (list): List of dicts with 'colqwen_vecs' and 'filepath'.
 
         Returns:
             list: List of dicts ready for Milvus insertion.
@@ -238,7 +238,7 @@ class MilvusManager:
         for i in range(len(images_with_vectors)):
             self.max_doc_id += 1
             data = {
-                "colbert_vecs": images_with_vectors[i]["colbert_vecs"],
+                "colqwen_vecs": images_with_vectors[i]["colqwen_vecs"],
                 "doc_id": self.max_doc_id,
                 "filepath": images_with_vectors[i]["filepath"],
             }
@@ -305,10 +305,10 @@ class Middleware:
 
         logger.info(f"Saved {len(image_paths)} images")
 
-        colbert_vecs = self.colpali_manager.process_images(image_paths)
+        colqwen_vecs = self.colpali_manager.process_images(image_paths)
 
         images_data = [
-            {"colbert_vecs": colbert_vecs[i], "filepath": image_paths[i]}
+            {"colqwen_vecs": colqwen_vecs[i], "filepath": image_paths[i]}
             for i in range(len(image_paths))
         ]
 
@@ -638,7 +638,8 @@ for idx,f in enumerate((PROJECT_ROOT_DIR/"data/policy_wordings").iterdir()):
 # %%
 query = "what critical illnesses are covered under optima restore?"
 query_vec = middleware.colpali_manager.process_text([query])[0]
-search_res = middleware.milvus_manager.search(query_vec, topk=5)
+# retrive only 4 as only 4 images can be inferenced at a time with QWEN 2.5 72B
+search_res = middleware.milvus_manager.search(query_vec, topk=4) 
 # %%
 search_res
 # %%
