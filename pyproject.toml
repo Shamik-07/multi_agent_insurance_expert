@@ -26,6 +26,7 @@ dependencies = [
     "requests>=2.32.3",
     "smolagents>=1.16.1",
     "torchvision>=0.21.0",
+    "wikipedia-api>=0.8.1",
 ]
 
 

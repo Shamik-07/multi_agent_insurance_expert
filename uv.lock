@@ -1121,6 +1121,7 @@ dependencies = [
     { name = "requests" },
     { name = "smolagents" },
     { name = "torchvision" },
+    { name = "wikipedia-api" },
 ]
 
 [package.dev-dependencies]
@@ -1150,6 +1151,7 @@ requires-dist = [
     { name = "requests", specifier = ">=2.32.3" },
     { name = "smolagents", specifier = ">=1.16.1" },
     { name = "torchvision", specifier = ">=0.21.0" },
+    { name = "wikipedia-api", specifier = ">=0.8.1" },
 ]
 
 [package.metadata.requires-dev]
@@ -3947,6 +3949,15 @@ sdist = { url = "https://files.pythonhosted.org/packages/41/53/2e0253c5efd69c965
 wheels = [
     { url = "https://files.pythonhosted.org/packages/ca/51/5447876806d1088a0f8f71e16542bf350918128d0a69437df26047c8e46f/widgetsnbextension-4.0.14-py3-none-any.whl", hash = "sha256:4875a9eaf72fbf5079dc372a51a9f268fc38d46f767cbf85c43a36da5cb9b575", size = 2196503, upload-time = "2025-04-10T13:01:23.086Z" },
 ]
+
+[[package]]
+name = "wikipedia-api"
+version = "0.8.1"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "requests" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/b9/aa/2e35be124dfc7e581480705f912040172f6570cc12e68a245ba9258c32ef/wikipedia_api-0.8.1.tar.gz", hash = "sha256:b31e93b3f5407c1a1ba413ed7326a05379a3c270df6cf6a211aca67a14c5658b", size = 19934, upload-time = "2025-01-19T23:44:33.488Z" }
 
 [[package]]
 name = "wrapt"
