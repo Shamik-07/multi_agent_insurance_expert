@@ -260,14 +260,14 @@ class MilvusManager:
 
 
 # %%
-class Middleware:
+class VectorProcessor:
     def __init__(
         self,
         id: str,
         create_collection=True,
     ):
         """
-        Initializes the Middleware with Milvus, Colpali, and PDF managers.
+        Initializes the VectorProcessor with Milvus, Colpali, and PDF managers.
 
         Args:
             id (str): Unique identifier for the session/user.
@@ -512,7 +512,7 @@ class PDFSearchApp:
         try:
             self.current_pdf = file.name
 
-            middleware = Middleware(id=id, create_collection=True)
+            middleware = VectorProcessor(id=id, create_collection=True)
 
             pages = middleware.index(pdf_path=file, id=id, max_pages=max_pages)
 
@@ -534,7 +534,7 @@ class PDFSearchApp:
             return "Please enter a search query", "--"
 
         try:
-            middleware = Middleware(id, create_collection=False)
+            middleware = VectorProcessor(id, create_collection=False)
 
             search_results = middleware.search([query])[0]
 
@@ -633,7 +633,7 @@ app = PDFSearchApp()
 # %%
 for idx,f in enumerate((PROJECT_ROOT_DIR/"data/policy_wordings").iterdir()):
     if idx==0:
-        middleware = Middleware(id="policy_wordings", create_collection=True)
+        middleware = VectorProcessor(id="policy_wordings", create_collection=True)
     pages = middleware.index(pdf_path=f, id=f.name, max_pages=200)
 # %%
 query = "what critical illnesses are covered under optima restore?"
