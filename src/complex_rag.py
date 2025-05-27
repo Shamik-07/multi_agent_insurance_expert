@@ -279,7 +279,7 @@ class VectorProcessor:
         self.milvus_manager = MilvusManager(
             milvus_db_name, f"{id}", create_collection
         )
-        self.colpali_manager = ColpaliManager()
+        self.colqwen_manager = ColqwenManager()
         self.pdf_manager = PdfManager()
 
     def index(
@@ -305,7 +305,7 @@ class VectorProcessor:
 
         logger.info(f"Saved {len(image_paths)} images")
 
-        colqwen_vecs = self.colpali_manager.process_images(image_paths)
+        colqwen_vecs = self.colqwen_manager.process_images(image_paths)
 
         images_data = [
             {"colqwen_vecs": colqwen_vecs[i], "filepath": image_paths[i]}
@@ -327,7 +327,7 @@ class VectorProcessor:
 
         for query in search_queries:
             logger.info(f"Searching for query: {query}")
-            query_vec = self.colpali_manager.process_text([query])[0]
+            query_vec = self.colqwen_manager.process_text([query])[0]
             search_res = self.milvus_manager.search(query_vec, topk=1)
             logger.info(f"Search result: {search_res} for query: {query}")
             final_res.append(search_res)
@@ -404,7 +404,7 @@ class PdfManager:
 
 
 # %%
-class ColpaliManager:
+class ColqwenManager:
     def get_images(self, paths: list[str]) -> list[Image.Image]:
         """
         Loads images from file paths.
