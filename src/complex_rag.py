@@ -267,7 +267,7 @@ class VectorProcessor:
         create_collection=True,
     ):
         """
-        Initializes the VectorProcessor with Milvus, Colpali, and PDF managers.
+        Initializes the VectorProcessor with Milvus, Colqwen, and PDF managers.
 
         Args:
             id (str): Unique identifier for the session/user.
