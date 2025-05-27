@@ -70,6 +70,7 @@ class MilvusManager:
         if self.client.has_collection(collection_name=self.collection_name):
             self.client.load_collection(collection_name)
         self.dim = dim
+        self.max_doc_id = 0
 
         if create_collection:
             self.create_collection()
@@ -203,10 +204,11 @@ class MilvusManager:
         """
         colbert_vecs = [vec for vec in data["colbert_vecs"]]
         seq_length = len(colbert_vecs)
-        doc_ids = [data["doc_id"] for i in range(seq_length)]
+        doc_ids = [data["doc_id"] for _ in range(seq_length)]
         seq_ids = list(range(seq_length))
-        docs = [""] * seq_length
-        docs[0] = data["filepath"]
+        docs = [data["filepath"] for _ in range(seq_length)]
+        # docs = [""] * seq_length
+        # docs[0] = data["filepath"]
 
         self.client.insert(
             self.collection_name,
@@ -234,9 +236,10 @@ class MilvusManager:
         images_data = []
 
         for i in range(len(images_with_vectors)):
+            self.max_doc_id += 1
             data = {
                 "colbert_vecs": images_with_vectors[i]["colbert_vecs"],
-                "doc_id": i,
+                "doc_id": self.max_doc_id,
                 "filepath": images_with_vectors[i]["filepath"],
             }
             images_data.append(data)
@@ -637,9 +640,13 @@ query = "what critical illnesses are covered under optima restore?"
 query_vec = middleware.colpali_manager.process_text([query])[0]
 search_res = middleware.milvus_manager.search(query_vec, topk=5)
 # %%
-middleware.milvus_manager.client.query(collection_name="policy_wordings",
-                                       filter="doc_id == 45",
-                                       output_fields=["doc"])
+search_res
+# %%
+check_res = middleware.milvus_manager.client.query(collection_name="policy_wordings",
+                                       filter=f"doc_id in {[d[1] for d in search_res]}",
+                                       output_fields=[ "doc_id", "doc"])
+# %%
+set((i['doc'], i['doc_id']) for i in check_res), search_res
 # %%
 search_params = {"metric_type": "IP", "params": {}}
 results = middleware.milvus_manager.client.search(
