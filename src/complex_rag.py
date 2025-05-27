@@ -512,9 +512,9 @@ class PDFSearchApp:
         try:
             self.current_pdf = file.name
 
-            middleware = VectorProcessor(id=id, create_collection=True)
+            vectorprocessor = VectorProcessor(id=id, create_collection=True)
 
-            pages = middleware.index(pdf_path=file, id=id, max_pages=max_pages)
+            pages = vectorprocessor.index(pdf_path=file, id=id, max_pages=max_pages)
 
             self.indexed_docs[id] = True
 
@@ -534,9 +534,9 @@ class PDFSearchApp:
             return "Please enter a search query", "--"
 
         try:
-            middleware = VectorProcessor(id, create_collection=False)
+            vectorprocessor = VectorProcessor(id, create_collection=False)
 
-            search_results = middleware.search([query])[0]
+            search_results = vectorprocessor.search([query])[0]
 
             page_num = search_results[0][1] + 1
 
@@ -633,24 +633,24 @@ app = PDFSearchApp()
 # %%
 for idx,f in enumerate((PROJECT_ROOT_DIR/"data/policy_wordings").iterdir()):
     if idx==0:
-        middleware = VectorProcessor(id="policy_wordings", create_collection=True)
-    pages = middleware.index(pdf_path=f, id=f.name, max_pages=200)
+        vectorprocessor = VectorProcessor(id="policy_wordings", create_collection=True)
+    pages = vectorprocessor.index(pdf_path=f, id=f.name, max_pages=200)
 # %%
 query = "what critical illnesses are covered under optima restore?"
-query_vec = middleware.colpali_manager.process_text([query])[0]
+query_vec = vectorprocessor.colpali_manager.process_text([query])[0]
 # retrive only 4 as only 4 images can be inferenced at a time with QWEN 2.5 72B
-search_res = middleware.milvus_manager.search(query_vec, topk=4) 
+search_res = vectorprocessor.milvus_manager.search(query_vec, topk=4) 
 # %%
 search_res
 # %%
-check_res = middleware.milvus_manager.client.query(collection_name="policy_wordings",
+check_res = vectorprocessor.milvus_manager.client.query(collection_name="policy_wordings",
                                        filter=f"doc_id in {[d[1] for d in search_res]}",
                                        output_fields=[ "doc_id", "doc"])
 # %%
 set((i['doc'], i['doc_id']) for i in check_res), search_res
 # %%
 search_params = {"metric_type": "IP", "params": {}}
-results = middleware.milvus_manager.client.search(
+results = vectorprocessor.milvus_manager.client.search(
     collection_name="policy_wordings",
     data=query_vec,
     limit=2,
@@ -660,14 +660,14 @@ results = middleware.milvus_manager.client.search(
 # %%
 results[0][1]
 # %%
-a = middleware.milvus_manager.client.query(
+a = vectorprocessor.milvus_manager.client.query(
     collection_name="policy_wordings", filter="doc_id == 45", output_fields=["doc"]
 )
 
 # %%
 a[3]
 # %%
-middleware.milvus_manager.client.query(
+vectorprocessor.milvus_manager.client.query(
     collection_name="policy_wordings",
     filter="pk == 458295805050210631",
     output_fields=["doc", "doc_id"],
