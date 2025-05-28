@@ -328,7 +328,7 @@ class VectorProcessor:
         for query in search_queries:
             logger.info(f"Searching for query: {query}")
             query_vec = self.colqwen_manager.process_text([query])[0]
-            search_res = self.milvus_manager.search(query_vec, topk=1)
+            search_res = self.milvus_manager.search(query_vec, topk=4)
             logger.info(f"Search result: {search_res} for query: {query}")
             final_res.append(search_res)
 
@@ -464,33 +464,32 @@ class ColqwenManager:
 
 
 # %%
-def generate_uuid(state):
-    """
-    Generates or retrieves a UUID for the user session.
+# def generate_uuid(state):
+#     """
+#     Generates or retrieves a UUID for the user session.
 
-    Args:
-        state (dict): State dictionary containing 'user_uuid'.
+#     Args:
+#         state (dict): State dictionary containing 'user_uuid'.
 
-    Returns:
-        str: UUID string.
-    """
-    # Check if UUID already exists in session state
-    if state["user_uuid"] is None:
-        # Generate a new UUID if not already set
-        state["user_uuid"] = str(uuid.uuid4())
+#     Returns:
+#         str: UUID string.
+#     """
+#     # Check if UUID already exists in session state
+#     if state["user_uuid"] is None:
+#         # Generate a new UUID if not already set
+#         state["user_uuid"] = str(uuid.uuid4())
 
-    return state["user_uuid"]
+#     return state["user_uuid"]
 
 
-class PDFSearchApp:
+class RAG:
     def __init__(self):
         """
-        Initializes the PDFSearchApp.
+        Initializes the RAG.
         """
-        self.indexed_docs = {}
-        self.current_pdf = None
-
-    def upload_and_convert(self, state, file, max_pages=100):
+        self.vectordb_id = None
+        self.img_path_dir = PROJECT_ROOT_DIR / "src/pages/"
+    def create_vector_db(self, vectordb_id="policy_wordings", dir=PROJECT_ROOT_DIR/"data" , max_pages=200):
         """
         Uploads a PDF file, converts it to images, and indexes it.
 
@@ -502,56 +501,37 @@ class PDFSearchApp:
         Returns:
             str: Status message.
         """
-        id = generate_uuid(state)
 
-        if file is None:
-            return "No file uploaded"
-
-        logger.info(f"Uploading file: {file.name}, id: {id}")
+        logger.info(f"Converting files in: {dir}.")
 
         try:
-            self.current_pdf = file.name
+            for idx,f in enumerate((dir/"policy_wordings").iterdir()):
+                if idx==0:
+                    vectorprocessor = VectorProcessor(id=vectordb_id, create_collection=True)
+                    self.vectordb_id = vectordb_id
+                _ = vectorprocessor.index(pdf_path=f, id=f.stem, max_pages=max_pages)
+            return f"✅ Created the vector_db: milvus_{vectordb_id} under `src` dir."
+        except Exception as err:
+            return f"❌ Error creating vector_db: {err}"
 
-            vectorprocessor = VectorProcessor(id=id, create_collection=True)
-
-            pages = vectorprocessor.index(pdf_path=file, id=id, max_pages=max_pages)
-
-            self.indexed_docs[id] = True
-
-            return f"Uploaded and extracted {len(pages)} pages"
-        except Exception as e:
-            return f"Error processing PDF: {str(e)}"
-
-    def search_documents(self, state, query):
-        logger.info(f"Searching for query: {query}")
-        id = generate_uuid(state)
-
-        if not self.indexed_docs[id]:
-            logger.warning("Please index documents first")
-            return "Please index documents first", "--"
-        if not query:
-            logger.warning("Please enter a search query")
-            return "Please enter a search query", "--"
-
+    def search_documents(self, query):
+        if self.vectordb_id is None:
+            raise Exception("Create the vector db first by invoking `create_vector_db`.")
         try:
-            vectorprocessor = VectorProcessor(id, create_collection=False)
+            vectorprocessor = VectorProcessor(id=self.vectordb_id, create_collection=False)
 
-            search_results = vectorprocessor.search([query])[0]
+            search_results = vectorprocessor.search(search_queries=[query])[0]
 
-            page_num = search_results[0][1] + 1
+            check_res = vectorprocessor.milvus_manager.client.query(collection_name=self.vectordb_id,
+                                       filter=f"doc_id in {[d[1] for d in search_results]}",
+                                       output_fields=[ "doc_id", "doc"])
+            img_path_doc_id = set((i['doc'], i['doc_id']) for i in check_res)
 
-            logger.info(f"Retrieved page number: {page_num}")
+            logger.info("✅ Retrieved the images for answering query.")
+            return img_path_doc_id
 
-            img_path = PROJECT_ROOT_DIR / f"pages/{id}/page_{page_num}.png"
-
-            logger.info(f"Retrieved image path: {img_path}")
-
-            rag_response = self.query_gpt4o_mini(query, [img_path])
-
-            return img_path, rag_response
-
-        except Exception as e:
-            return f"Error during search: {str(e)}", "--"
+        except Exception as err:
+            return f"❌ Error during search: {err}"
 
     def encode_image_to_base64(self, image_path):
         """
@@ -608,36 +588,38 @@ class PDFSearchApp:
 
 
 # %%
-def main():
-    """
-    Main function for running the PDF search app in standalone mode.
-    """
-    user_id = {"user_uuid": None}
-    app = PDFSearchApp()
-    app.upload_and_convert(
-        state=user_id, file=PROJECT_ROOT_DIR / "data/PI-TOOL-WEB-SAMPLE.pdf"
-    )
-    logger.info(user_id)
-    _, response = app.search_documents(
-        state=user_id, query="what's JPGCCOMP allocation?"
-    )
-    logger.info(response)
+# def main():
+#     """
+#     Main function for running the PDF search app in standalone mode.
+#     """
+#     user_id = {"user_uuid": None}
+#     app = RAG()
+#     app.upload_and_convert(
+#         state=user_id, file=PROJECT_ROOT_DIR / "data/PI-TOOL-WEB-SAMPLE.pdf"
+#     )
+#     logger.info(user_id)
+#     _, response = app.search_documents(
+#         state=user_id, query="what's JPGCCOMP allocation?"
+#     )
+#     logger.info(response)
 
 
 # %%
-if __name__ == "__main__":
-    main()
+# if __name__ == "__main__":
+#     main()
 
 # %%
-app = PDFSearchApp()
+# app = RAG()
 # %%
-for idx,f in enumerate((PROJECT_ROOT_DIR/"data/policy_wordings").iterdir()):
-    if idx==0:
-        vectorprocessor = VectorProcessor(id="policy_wordings", create_collection=True)
-    pages = vectorprocessor.index(pdf_path=f, id=f.name, max_pages=200)
+# for idx,f in enumerate((PROJECT_ROOT_DIR/"data/policy_wordings").iterdir()):
+#     if idx==0:
+#         vectorprocessor = VectorProcessor(id="policy_wordings", create_collection=True)
+#     pages = vectorprocessor.index(pdf_path=f, id=f.stem, max_pages=200)
+# %%
+vectorprocessor = VectorProcessor(id="policy_wordings", create_collection=False)
 # %%
 query = "what critical illnesses are covered under optima restore?"
-query_vec = vectorprocessor.colpali_manager.process_text([query])[0]
+query_vec = vectorprocessor.colqwen_manager.process_text([query])[0]
 # retrive only 4 as only 4 images can be inferenced at a time with QWEN 2.5 72B
 search_res = vectorprocessor.milvus_manager.search(query_vec, topk=4) 
 # %%
@@ -675,4 +657,10 @@ vectorprocessor.milvus_manager.client.query(
 # %%
 # We have to change the search to search by pk and not doc_id
 
+# %%
+rag_app = RAG()
+rag_app.vectordb_id = "policy_wordings"
+
+# %%
+rag_app.search_documents(query)
 # %%
