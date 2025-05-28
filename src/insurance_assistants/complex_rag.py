@@ -550,7 +550,6 @@ class RAG:
         Returns:
             str: Base64 encoded image string.
         """
-        """Encodes a PIL image to a base64 string."""
         image = Image.open(image_path)
         buffered = BytesIO()
         image.save(buffered, format="JPEG")
@@ -667,11 +666,11 @@ class RAG:
 # # We have to change the search to search by pk and not doc_id
 
 # %%
-rag_app = RAG()
-rag_app.vectordb_id = "policy_wordings"
+# rag_app = RAG()
+# rag_app.vectordb_id = "policy_wordings"
 
 # %%
-rag_app.create_vector_db()
+# rag_app.create_vector_db()
 # %%
 
 # query = "what critical illnesses are covered under optima restore?"
