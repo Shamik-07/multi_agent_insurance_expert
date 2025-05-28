@@ -625,6 +625,8 @@ search_res = vectorprocessor.milvus_manager.search(query_vec, topk=4)
 # %%
 search_res
 # %%
+vectorprocessor.search([query])
+# %%
 check_res = vectorprocessor.milvus_manager.client.query(collection_name="policy_wordings",
                                        filter=f"doc_id in {[d[1] for d in search_res]}",
                                        output_fields=[ "doc_id", "doc"])
