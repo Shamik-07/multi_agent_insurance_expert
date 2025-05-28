@@ -377,9 +377,9 @@ class PdfManager:
             Path(output_folder) if output_folder is not None else output_folder
         )
         if output_folder is None:
-            output_folder = Path(f"src/insurance_assistants/pages/{id}/")
-        if not Path(output_folder).exists():
-            Path(output_folder).mkdir(parents=True, exist_ok=True)
+            output_folder = PROJECT_ROOT_DIR/ f"src/insurance_assistants/pages/{id}/"
+        if not output_folder.exists():
+            output_folder.mkdir(parents=True, exist_ok=True)
         images = convert_from_path(pdf_path=pdf_path)
 
         logger.info(
@@ -495,7 +495,7 @@ class RAG:
         Initializes the RAG.
         """
         self.vectordb_id = None
-        self.img_path_dir = PROJECT_ROOT_DIR / "src/pages/"
+        self.img_path_dir = PROJECT_ROOT_DIR / "src/insurance_assistants/pages/"
     def create_vector_db(self, vectordb_id="policy_wordings", dir=PROJECT_ROOT_DIR/"data" , max_pages=200):
         """
         Uploads a PDF file, converts it to images, and indexes it.
