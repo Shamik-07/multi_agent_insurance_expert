@@ -24,7 +24,7 @@ dependencies = [
     "python-dotenv>=1.1.0",
     "qwen-vl-utils>=0.0.11",
     "requests>=2.32.3",
-    "smolagents>=1.16.1",
+    "smolagents[gradio]>=1.16.1",
     "torchvision>=0.21.0",
     "wikipedia-api>=0.8.1",
 ]
