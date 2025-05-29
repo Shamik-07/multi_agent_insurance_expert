@@ -622,22 +622,22 @@ class RAG:
 #         vectorprocessor = VectorProcessor(id="policy_wordings", create_collection=True)
 #     pages = vectorprocessor.index(pdf_path=f, id=f.stem, max_pages=200)
 # %%
-vectorprocessor = VectorProcessor(id="policy_wordings", create_collection=False)
-# %%
-query = "Secure 4 in 1 critical illness policy cancer coverage"
-query_vec = vectorprocessor.colqwen_manager.process_text([query])[0]
-# retrive only 4 as only 4 images can be inferenced at a time with QWEN 2.5 72B
-search_res = vectorprocessor.milvus_manager.search(query_vec, topk=4) 
+# vectorprocessor = VectorProcessor(id="policy_wordings", create_collection=False)
 # # %%
-# search_res
+# query = "Secure 4 in 1 critical illness policy cancer coverage"
+# query_vec = vectorprocessor.colqwen_manager.process_text([query])[0]
+# # retrive only 4 as only 4 images can be inferenced at a time with QWEN 2.5 72B
+# search_res = vectorprocessor.milvus_manager.search(query_vec, topk=4) 
+# # # %%
+# # search_res
+# # # %%
+# # vectorprocessor.search([query])
 # # %%
-# vectorprocessor.search([query])
-# %%
-check_res = vectorprocessor.milvus_manager.client.query(collection_name="policy_wordings",
-                                       filter=f"doc_id in {[d[1] for d in search_res]}",
-                                       output_fields=[ "doc_id", "doc"])
-# %%
-set((i['doc'], i['doc_id']) for i in check_res), search_res
+# check_res = vectorprocessor.milvus_manager.client.query(collection_name="policy_wordings",
+#                                        filter=f"doc_id in {[d[1] for d in search_res]}",
+#                                        output_fields=[ "doc_id", "doc"])
+# # %%
+# set((i['doc'], i['doc_id']) for i in check_res), search_res
 # # %%
 # search_params = {"metric_type": "IP", "params": {}}
 # results = vectorprocessor.milvus_manager.client.search(
