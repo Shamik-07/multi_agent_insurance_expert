@@ -42,7 +42,7 @@ logger = logging.getLogger(__name__)
 # %%
 model_name = "vidore/colqwen2.5-v0.2"
 # model_name = "vidore/colpali-v1.2"
-device = get_torch_device("cuda")
+device = get_torch_device()
 
 model = ColQwen2_5.from_pretrained(
     # model = ColPali.from_pretrained(
@@ -56,7 +56,7 @@ processor = ColQwen2_5_Processor.from_pretrained(
     pretrained_model_name_or_path=model_name,
     use_fast=True,
 )
-_ = load_dotenv(find_dotenv(raise_error_if_not_found=True))
+_ = load_dotenv(dotenv_path=find_dotenv(raise_error_if_not_found=True))
 openai_client = OpenAI()
 
 
