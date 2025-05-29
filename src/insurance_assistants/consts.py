@@ -14,3 +14,6 @@ Query: {query}
 PDF pages:
 """
 
+PRIMARY_HEADING = """# A multi-purpose agent
+This agent answers health insurance related questions from pre-ingested set of health insurance documents, search wikipedia and the web for general information.
+"""
