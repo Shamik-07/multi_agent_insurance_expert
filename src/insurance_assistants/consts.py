@@ -15,9 +15,9 @@ PDF pages:
 """
 
 PRIMARY_HEADING = """# An Agentic RAG for Health Insurance Documents
-This agent answers health insurance related questions from pre-ingested set 
-of health insurance documents, search wikipedia, search the web
-and execute basic python code.
+#### This agent answers health insurance related questions from pre-ingested set \
+of health insurance documents, search wikipedia, search the web \
+and execute basic python code. \
 """
 
 PROMPT_PREFIX = """\n

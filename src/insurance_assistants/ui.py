@@ -171,7 +171,8 @@ class UI:
             ),
             gr.Button(interactive=False),
         )
-    
+    def list_pdfs(self, dir=PROJECT_ROOT_DIR/"data/policy_wordings"):
+
     def interrupt_agent(self, session_state):
         if "agent" not in session_state:
             session_state["agent"] = manager_agent
@@ -181,6 +182,7 @@ class UI:
     
     def launch(self, **kwargs):
         with gr.Blocks(fill_height=True) as demo:
+            gr.Markdown(value=PRIMARY_HEADING)
 
             @gr.render()
             def layout(request: gr.Request):
@@ -190,17 +192,20 @@ class UI:
                 ):
                     file_uploads_log = gr.State([])
                     with gr.Sidebar():
-                        gr.Markdown(value=PRIMARY_HEADING)
+                        gr.Markdown(
+                            value="""#### <span style="color:red"> The `interrupt` button doesn't stop the process instantaneously.</span>
+                                    <span style="color:green">You can continue to use the application upon pressing the interrupt button.</span>
+"""
+                        )
                         with gr.Group():
-                            gr.Markdown("**Your question, please...**", container=True)
+                            gr.Markdown(value="**Your question, please...**", container=True)
                             text_input = gr.Textbox(
                                 lines=3,
                                 label="Your question, please...",
                                 container=False,
-                                placeholder="Enter your prompt here and press Shift+Enter or press the button",
-                                # value=PROMPT_PREFIX
+                                placeholder="Enter your prompt here and press Shift+Enter or press `Run`",
                             )
-                            launch_research_btn = gr.Button(
+                            run_btn = gr.Button(
                                 value="Run", variant="primary"
                             )
                             agent_interrup_btn = gr.Button(
@@ -249,7 +254,7 @@ class UI:
                     text_input.submit(
                         fn=self.log_user_message,
                         inputs=[text_input, file_uploads_log],
-                        outputs=[stored_messages, text_input, launch_research_btn],
+                        outputs=[stored_messages, text_input, run_btn],
                     ).then(
                         fn=self.interact_with_agent,
                         # Include session_state in function calls
@@ -259,17 +264,17 @@ class UI:
                         fn=lambda: (
                             gr.Textbox(
                                 interactive=True,
-                                placeholder="Enter your prompt here and press the button",
+                                placeholder="Enter your prompt here or press `Run`",
                             ),
                             gr.Button(interactive=True),
                         ),
                         inputs=None,
-                        outputs=[text_input, launch_research_btn],
+                        outputs=[text_input, run_btn],
                     )
-                    launch_research_btn.click(
+                    run_btn.click(
                         fn=self.log_user_message,
                         inputs=[text_input, file_uploads_log],
-                        outputs=[stored_messages, text_input, launch_research_btn],
+                        outputs=[stored_messages, text_input, run_btn],
                     ).then(
                         fn=self.interact_with_agent,
                         # Include session_state in function calls
@@ -279,16 +284,16 @@ class UI:
                         fn=lambda: (
                             gr.Textbox(
                                 interactive=True,
-                                placeholder="Enter your prompt here and press the button",
+                                placeholder="Enter your prompt here or press `Run`",
                             ),
                             gr.Button(interactive=True),
                         ),
                         inputs=None,
-                        outputs=[text_input, launch_research_btn],
+                        outputs=[text_input, run_btn],
                     )
                     agent_interrup_btn.click(
                         fn=self.interrupt_agent,
-                        inputs=[session_state]
+                        inputs=[session_state],
                     )
                     PDF(value=(PROJECT_ROOT_DIR / "data/policy_wordings/easy-health.pdf").as_posix(),
                         label="PDF Viewer",
