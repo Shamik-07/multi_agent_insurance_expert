@@ -19,7 +19,7 @@ PRIMARY_HEADING = """# An Agentic RAG for Health Insurance Documents
 of health insurance documents, search wikipedia, search the web \
 and execute basic python code. \
 
-The pre-ingested health insurance documents can be viewed under `PDF Viewer`.
+The pre-ingested health insurance documents can be viewed under `PDF Viewer` section.
 """
 
 PROMPT_PREFIX = """\n

@@ -10,7 +10,7 @@ from smolagents.memory import ActionStep, MemoryStep, FinalAnswerStep, PlanningS
 from smolagents.models import ChatMessageStreamDelta
 from smolagents.gradio_ui import _process_action_step, _process_final_answer_step
 from smolagents import CodeAgent, InferenceClientModel
-# from src.insurance_assistants.agents import manager_agent
+from src.insurance_assistants.agents import manager_agent
 from src.insurance_assistants.consts import PRIMARY_HEADING, PROJECT_ROOT_DIR
 
 load_dotenv(override=True)
@@ -82,8 +82,8 @@ class UI:
     def interact_with_agent(self, prompt, messages, session_state):
         # Get or create session-specific agent
         if "agent" not in session_state:
-            session_state["agent"] = CodeAgent(tools=[], model=InfenceClientModel())
-            # session_state["agent"] = manager_agent
+            # session_state["agent"] = CodeAgent(tools=[], model=InfenceClientModel())
+            session_state["agent"] = manager_agent
         # Adding monitoring
         try:
             # log the existence of agent memory
