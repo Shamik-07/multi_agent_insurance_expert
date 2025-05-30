@@ -9,13 +9,17 @@ from dotenv import load_dotenv
 from smolagents.memory import ActionStep, MemoryStep, FinalAnswerStep, PlanningStep
 from smolagents.models import ChatMessageStreamDelta
 from smolagents.gradio_ui import _process_action_step, _process_final_answer_step
-from smolagents import CodeAgent, InferenceClientModel
+# from smolagents import CodeAgent, InferenceClientModel
 from src.insurance_assistants.agents import manager_agent
 from src.insurance_assistants.consts import PRIMARY_HEADING, PROJECT_ROOT_DIR
+import logging
 
 load_dotenv(override=True)
 # login(token=os.getenv(key="HF_TOKEN"))
 
+# Setup logger
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 class UI:
     """A one-line interface to launch your agent in Gradio"""
@@ -88,9 +92,9 @@ class UI:
         try:
             # log the existence of agent memory
             has_memory = hasattr(session_state["agent"], "memory")
-            print(f"Agent has memory: {has_memory}")
+            logger.info(f"Agent has memory: {has_memory}")
             if has_memory:
-                print(f"Memory type: {type(session_state['agent'].memory)}")
+                logger.info(f"Memory type: {type(session_state['agent'].memory)}")
 
             messages.append(gr.ChatMessage(role="user", content=prompt))
             yield messages
@@ -104,7 +108,7 @@ class UI:
                 yield messages
             yield messages
         except Exception as e:
-            print(f"Error in interaction: {str(e)}")
+            logger.info(f"Error in interaction: {str(e)}")
             raise
 
     def upload_file(
