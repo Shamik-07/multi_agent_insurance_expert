@@ -16,6 +16,7 @@ from io import BytesIO
 import base64
 from pathlib import Path
 from src.insurance_assistants.complex_rag import RAG
+from src.insurance_assistants.consts import PROMPT_PREFIX
 
 _ = load_dotenv(dotenv_path=find_dotenv())
 rag_app = RAG()
@@ -73,8 +74,7 @@ insurance_agent = CodeAgent(
     model=InferenceClientModel(bill_to="VitalNest", temperature=0.1),
     additional_authorized_imports=["os", "requests", "bs4", "pil", "base64", "io"],
     max_steps=1,
-    # planning_interval=2,
-    verbosity_level=0,
+    verbosity_level=-1,
     name="insurance_agent",
     description="You answer health insurance questions based on the InsuranceInfoRetriever "
     "tool. All health insurance questions must be answered by you.",
@@ -89,7 +89,7 @@ websearch_agent = ToolCallingAgent(
         FinalAnswerTool(),
     ],
     max_steps=4,
-    verbosity_level=0,
+    verbosity_level=-1,
     name="web_search_agent",
     planning_interval=2,
     description="Searches the web with a particular query.",
@@ -104,7 +104,7 @@ wikipedia_agent = ToolCallingAgent(
         FinalAnswerTool(),
     ],
     max_steps=3,
-    verbosity_level=0,
+    verbosity_level=-1,
     name="wikipedia_agent",
     description="Searches Wikipedia for a topic.",
 )
@@ -126,3 +126,4 @@ manager_agent = CodeAgent(
     description="Answer health insurance related questions from pre-defined set of "
     "health insurance documents, search wikipedia and the web for general information.",
 )
+manager_agent.system_prompt = manager_agent.system_prompt + PROMPT_PREFIX

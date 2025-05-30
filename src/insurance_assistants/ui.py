@@ -5,18 +5,15 @@ import shutil
 
 import gradio as gr
 from dotenv import load_dotenv
-from huggingface_hub import login
-from smolagents.gradio_ui import stream_to_gradio
+from smolagents.memory import ActionStep, MemoryStep, FinalAnswerStep, PlanningStep
+from smolagents.models import ChatMessageStreamDelta
+from smolagents.gradio_ui import _process_action_step, _process_final_answer_step
+
 from src.insurance_assistants.agents import manager_agent
-from src.insurance_assistants.consts import PRIMARY_HEADING, PROMPT_PREFIX
+from src.insurance_assistants.consts import PRIMARY_HEADING
 
 load_dotenv(override=True)
 # login(token=os.getenv(key="HF_TOKEN"))
-
-
-
-
-
 
 
 class UI:
@@ -28,11 +25,63 @@ class UI:
             if not os.path.exists(file_upload_folder):
                 os.mkdir(file_upload_folder)
 
+    def pull_messages_from_step(self, step_log: MemoryStep, skip_model_outputs: bool = False):
+        """Extract ChatMessage objects from agent steps with proper nesting.
+
+        Args:
+            step_log: The step log to display as gr.ChatMessage objects.
+            skip_model_outputs: If True, skip the model outputs when creating the gr.ChatMessage objects:
+                This is used for instance when streaming model outputs have already been displayed.
+        """
+        if isinstance(step_log, ActionStep):
+            yield from _process_action_step(step_log, skip_model_outputs)
+        elif isinstance(step_log, PlanningStep):
+            pass
+        #     yield from _process_planning_step(step_log, skip_model_outputs)
+        elif isinstance(step_log, FinalAnswerStep):
+            yield from _process_final_answer_step(step_log)
+        else:
+            raise ValueError(f"Unsupported step type: {type(step_log)}")
+    
+    def stream_to_gradio(
+        self,
+        agent,
+        task: str,
+        task_images: list | None = None,
+        reset_agent_memory: bool = False,
+        additional_args: dict | None = None,
+    ):
+        """Runs an agent with the given task and streams the messages from the agent as gradio ChatMessages."""
+        intermediate_text = ""
+        for step_log in agent.run(
+            task,
+            images=task_images,
+            stream=True,
+            reset=reset_agent_memory,
+            additional_args=additional_args,
+        ):
+            # Track tokens if model provides them
+            if getattr(agent.model, "last_input_token_count", None) is not None:
+                if isinstance(step_log, (ActionStep, PlanningStep)):
+                    step_log.input_token_count = agent.model.last_input_token_count
+                    step_log.output_token_count = agent.model.last_output_token_count
+
+            if isinstance(step_log, MemoryStep):
+                intermediate_text = ""
+                for message in self.pull_messages_from_step(
+                    step_log,
+                    # If we're streaming model outputs, no need to display them twice
+                    skip_model_outputs=getattr(agent, "stream_outputs", False),
+                ):
+                    yield message
+            elif isinstance(step_log, ChatMessageStreamDelta):
+                intermediate_text += step_log.content or ""
+                yield intermediate_text
+
     def interact_with_agent(self, prompt, messages, session_state):
         # Get or create session-specific agent
         if "agent" not in session_state:
             session_state["agent"] = manager_agent
-        prompt = PROMPT_PREFIX + prompt
         # Adding monitoring
         try:
             # log the existence of agent memory
@@ -44,7 +93,7 @@ class UI:
             messages.append(gr.ChatMessage(role="user", content=prompt))
             yield messages
 
-            for msg in stream_to_gradio(
+            for msg in self.stream_to_gradio(
                 agent=session_state["agent"],
                 task=prompt,
                 reset_agent_memory=False,
@@ -122,10 +171,9 @@ class UI:
             gr.Button(interactive=False),
         )
 
-    
-
     def launch(self, **kwargs):
         with gr.Blocks(fill_height=True) as demo:
+
             @gr.render()
             def layout(request: gr.Request):
                 # Render layout with sidebar
