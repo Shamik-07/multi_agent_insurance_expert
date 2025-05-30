@@ -1,26 +1,27 @@
-from dotenv import load_dotenv, find_dotenv
+from pathlib import Path
+
+from dotenv import find_dotenv, load_dotenv
+from huggingface_hub import InferenceClient
 from smolagents import (
     CodeAgent,
     DuckDuckGoSearchTool,
-    InferenceClientModel,
-    VisitWebpageTool,
-    WikipediaSearchTool,
     FinalAnswerTool,
+    InferenceClientModel,
     PythonInterpreterTool,
     Tool,
     ToolCallingAgent,
+    VisitWebpageTool,
+    WikipediaSearchTool,
 )
-from huggingface_hub import model_info, InferenceClient
-from PIL import Image
-from io import BytesIO
-import base64
-from pathlib import Path
+
 from src.insurance_assistants.complex_rag import RAG
 from src.insurance_assistants.consts import PROMPT_PREFIX
 
 _ = load_dotenv(dotenv_path=find_dotenv())
 rag_app = RAG()
+# FIXME Comment the following if you want to reprocess everything
 rag_app.vectordb_id = "policy_wordings"
+
 
 class InsuranceInfoRetriever(Tool):
     name = "InsuranceInfoRetriever"
@@ -69,6 +70,7 @@ class InsuranceInfoRetriever(Tool):
             answer += f"The information was retrived from the following documents: {img_paths}"
         return answer if answer else ""
 
+
 insurance_agent = CodeAgent(
     tools=[InsuranceInfoRetriever(), FinalAnswerTool()],
     model=InferenceClientModel(bill_to="VitalNest", temperature=0.1),
@@ -116,7 +118,7 @@ manager_agent = CodeAgent(
         model_id="Qwen/Qwen3-235B-A22B",
         bill_to="VitalNest",
         temperature=0.1,
-    ),  # "Qwen/Qwen3-30B-A3B"
+    ),
     managed_agents=[websearch_agent, wikipedia_agent, insurance_agent],
     max_steps=10,
     planning_interval=2,

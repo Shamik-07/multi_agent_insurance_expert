@@ -1,25 +1,26 @@
+import logging
 import mimetypes
 import os
 import re
 import shutil
 
 import gradio as gr
-from gradio_pdf import PDF
 from dotenv import load_dotenv
-from smolagents.memory import ActionStep, MemoryStep, FinalAnswerStep, PlanningStep
-from smolagents.models import ChatMessageStreamDelta
+from gradio_pdf import PDF
 from smolagents.gradio_ui import _process_action_step, _process_final_answer_step
+from smolagents.memory import ActionStep, FinalAnswerStep, MemoryStep, PlanningStep
+from smolagents.models import ChatMessageStreamDelta
+
 # from smolagents import CodeAgent, InferenceClientModel
 from src.insurance_assistants.agents import manager_agent
 from src.insurance_assistants.consts import PRIMARY_HEADING, PROJECT_ROOT_DIR
-import logging
 
 load_dotenv(override=True)
-# login(token=os.getenv(key="HF_TOKEN"))
 
 # Setup logger
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
 
 class UI:
     """A one-line interface to launch your agent in Gradio"""
@@ -30,7 +31,9 @@ class UI:
             if not os.path.exists(file_upload_folder):
                 os.mkdir(file_upload_folder)
 
-    def pull_messages_from_step(self, step_log: MemoryStep, skip_model_outputs: bool = False):
+    def pull_messages_from_step(
+        self, step_log: MemoryStep, skip_model_outputs: bool = False
+    ):
         """Extract ChatMessage objects from agent steps with proper nesting.
 
         Args:
@@ -47,7 +50,7 @@ class UI:
             yield from _process_final_answer_step(step_log)
         else:
             raise ValueError(f"Unsupported step type: {type(step_log)}")
-    
+
     def stream_to_gradio(
         self,
         agent,
@@ -176,7 +179,8 @@ class UI:
             ),
             gr.Button(interactive=False),
         )
-    def list_pdfs(self, dir=PROJECT_ROOT_DIR/"data/policy_wordings"):
+
+    def list_pdfs(self, dir=PROJECT_ROOT_DIR / "data/policy_wordings"):
         file_names = [f.name for f in dir.iterdir()]
         return file_names
 
@@ -186,14 +190,14 @@ class UI:
         agent = session_state["agent"]
         agent.interrupt()
         return
-    
+
     def display_pdf(self, pdf_selector):
         return PDF(
             value=(f"{PROJECT_ROOT_DIR}/data/policy_wordings/{pdf_selector}"),
             label="PDF Viewer",
             show_label=True,
         )
-    
+
     def launch(self, **kwargs):
         with gr.Blocks(fill_height=True) as demo:
             gr.Markdown(value=PRIMARY_HEADING)
@@ -212,16 +216,16 @@ class UI:
 """
                         )
                         with gr.Group():
-                            gr.Markdown(value="**Your question, please...**", container=True)
+                            gr.Markdown(
+                                value="**Your question, please...**", container=True
+                            )
                             text_input = gr.Textbox(
                                 lines=3,
                                 label="Your question, please...",
                                 container=False,
                                 placeholder="Enter your prompt here and press Shift+Enter or press `Run`",
                             )
-                            run_btn = gr.Button(
-                                value="Run", variant="primary"
-                            )
+                            run_btn = gr.Button(value="Run", variant="primary")
                             agent_interrup_btn = gr.Button(
                                 value="Interrupt", variant="stop"
                             )
@@ -247,11 +251,8 @@ class UI:
                     <a target="_blank" href="https://github.com/huggingface/smolagents"><b>huggingface/smolagents</b></a>
                     </div>""")
 
-                    
                     # Add session state to store session-specific data
-                    session_state = gr.State(
-                        {}
-                    )  
+                    session_state = gr.State({})
                     # Initialize empty state for each session
                     stored_messages = gr.State([])
                     chatbot = gr.Chatbot(
@@ -267,17 +268,22 @@ class UI:
                     )
                     with gr.Group():
                         gr.Markdown("### 📈 PDF Viewer")
-                        pdf_choices= self.list_pdfs()
-                        pdf_selector = gr.Dropdown(choices=pdf_choices, label="Select a PDF",
-                                    info="Choose one",show_label=True,
-                                    interactive=True)
+                        pdf_choices = self.list_pdfs()
+                        pdf_selector = gr.Dropdown(
+                            choices=pdf_choices,
+                            label="Select a PDF",
+                            info="Choose one",
+                            show_label=True,
+                            interactive=True,
+                        )
                         pdf_viewer = PDF(
                             label="PDF Viewer",
                             show_label=True,
                         )
-                        pdf_selector.change(fn=self.display_pdf,
-                                            inputs=pdf_selector,outputs=pdf_viewer)
-                        
+                        pdf_selector.change(
+                            fn=self.display_pdf, inputs=pdf_selector, outputs=pdf_viewer
+                        )
+
                     text_input.submit(
                         fn=self.log_user_message,
                         inputs=[text_input, file_uploads_log],
@@ -322,8 +328,9 @@ class UI:
                         fn=self.interrupt_agent,
                         inputs=[session_state],
                     )
-            
+
         demo.launch(debug=True, **kwargs)
+
 
 # if __name__=="__main__":
 #     UI().launch(share=True,
