@@ -9,8 +9,8 @@ from dotenv import load_dotenv
 from smolagents.memory import ActionStep, MemoryStep, FinalAnswerStep, PlanningStep
 from smolagents.models import ChatMessageStreamDelta
 from smolagents.gradio_ui import _process_action_step, _process_final_answer_step
-
-from src.insurance_assistants.agents import manager_agent
+from smolagents import CodeAgent, InferenceClientModel
+# from src.insurance_assistants.agents import manager_agent
 from src.insurance_assistants.consts import PRIMARY_HEADING, PROJECT_ROOT_DIR
 
 load_dotenv(override=True)
@@ -82,7 +82,8 @@ class UI:
     def interact_with_agent(self, prompt, messages, session_state):
         # Get or create session-specific agent
         if "agent" not in session_state:
-            session_state["agent"] = manager_agent
+            session_state["agent"] = CodeAgent(tools=[], model=InfenceClientModel())
+            # session_state["agent"] = manager_agent
         # Adding monitoring
         try:
             # log the existence of agent memory
@@ -172,6 +173,8 @@ class UI:
             gr.Button(interactive=False),
         )
     def list_pdfs(self, dir=PROJECT_ROOT_DIR/"data/policy_wordings"):
+        file_names = [f.name for f in dir.iterdir()]
+        return file_names
 
     def interrupt_agent(self, session_state):
         if "agent" not in session_state:
@@ -179,6 +182,13 @@ class UI:
         agent = session_state["agent"]
         agent.interrupt()
         return
+    
+    def display_pdf(self, pdf_selector):
+        return PDF(
+            value=(f"{PROJECT_ROOT_DIR}/data/policy_wordings/{pdf_selector}"),
+            label="PDF Viewer",
+            show_label=True,
+        )
     
     def launch(self, **kwargs):
         with gr.Blocks(fill_height=True) as demo:
@@ -233,6 +243,7 @@ class UI:
                     <a target="_blank" href="https://github.com/huggingface/smolagents"><b>huggingface/smolagents</b></a>
                     </div>""")
 
+                    
                     # Add session state to store session-specific data
                     session_state = gr.State(
                         {}
@@ -250,7 +261,19 @@ class UI:
                         scale=1,
                         elem_id="Insurance-Agent",
                     )
-
+                    with gr.Group():
+                        gr.Markdown("### 📈 PDF Viewer")
+                        pdf_choices= self.list_pdfs()
+                        pdf_selector = gr.Dropdown(choices=pdf_choices, label="Select a PDF",
+                                    info="Choose one",show_label=True,
+                                    interactive=True)
+                        pdf_viewer = PDF(
+                            label="PDF Viewer",
+                            show_label=True,
+                        )
+                        pdf_selector.change(fn=self.display_pdf,
+                                            inputs=pdf_selector,outputs=pdf_viewer)
+                        
                     text_input.submit(
                         fn=self.log_user_message,
                         inputs=[text_input, file_uploads_log],
@@ -295,10 +318,9 @@ class UI:
                         fn=self.interrupt_agent,
                         inputs=[session_state],
                     )
-                    PDF(value=(PROJECT_ROOT_DIR / "data/policy_wordings/easy-health.pdf").as_posix(),
-                        label="PDF Viewer",
-                        show_label=True)
+            
         demo.launch(debug=True, **kwargs)
 
-
-# UI().launch(share=False)
+# if __name__=="__main__":
+#     UI().launch(share=True,
+# allowed_paths=[(PROJECT_ROOT_DIR /"data/policy_wordings").as_posix()])
