@@ -1,25 +1,17 @@
 # %%
-# REMOVE THIS LATER
-from pyprojroot import find_root, has_file
-project_root_dir = find_root(has_file("README.md")).as_posix()
-import sys
-sys.path.extend([project_root_dir])
-
-# %%
 import base64
 import concurrent.futures
-import hashlib
 import logging
 import os
 import shutil
-import uuid
 from io import BytesIO
+from pathlib import Path
 
 import numpy as np
 import torch
 from colpali_engine.models import (
-    ColPali,
-    ColPaliProcessor,
+    # ColPali,
+    # ColPaliProcessor,
     ColQwen2_5,
     ColQwen2_5_Processor,
 )
@@ -31,7 +23,6 @@ from PIL import Image
 from pymilvus import DataType, MilvusClient
 from torch.utils.data import DataLoader
 from tqdm import tqdm
-from pathlib import Path
 
 from src.insurance_assistants.consts import PROJECT_ROOT_DIR, PROMPT
 
@@ -282,10 +273,10 @@ class VectorProcessor:
         """
         # hashed_id = hashlib.md5(id.encode()).hexdigest()[:8]
         # milvus_db_name = f"milvus_{hashed_id}.db"
-        milvus_db_name = (PROJECT_ROOT_DIR/f"src/insurance_assistants/milvus_{id}.db").as_posix()
-        self.milvus_manager = MilvusManager(
-            milvus_db_name, f"{id}", create_collection
-        )
+        milvus_db_name = (
+            PROJECT_ROOT_DIR / f"src/insurance_assistants/milvus_{id}.db"
+        ).as_posix()
+        self.milvus_manager = MilvusManager(milvus_db_name, f"{id}", create_collection)
         self.colqwen_manager = ColqwenManager()
         self.pdf_manager = PdfManager()
 
@@ -377,7 +368,7 @@ class PdfManager:
             Path(output_folder) if output_folder is not None else output_folder
         )
         if output_folder is None:
-            output_folder = PROJECT_ROOT_DIR/ f"src/insurance_assistants/pages/{id}/"
+            output_folder = PROJECT_ROOT_DIR / f"src/insurance_assistants/pages/{id}/"
         if not output_folder.exists():
             output_folder.mkdir(parents=True, exist_ok=True)
         images = convert_from_path(pdf_path=pdf_path)
@@ -496,7 +487,13 @@ class RAG:
         """
         self.vectordb_id = None
         self.img_path_dir = PROJECT_ROOT_DIR / "src/insurance_assistants/pages/"
-    def create_vector_db(self, vectordb_id="policy_wordings", dir=PROJECT_ROOT_DIR/"data" , max_pages=200):
+
+    def create_vector_db(
+        self,
+        vectordb_id="policy_wordings",
+        dir=PROJECT_ROOT_DIR / "data",
+        max_pages=200,
+    ):
         """
         Uploads a PDF file, converts it to images, and indexes it.
 
@@ -512,9 +509,11 @@ class RAG:
         logger.info(f"Converting files in: {dir}.")
 
         try:
-            for idx,f in enumerate((dir/"policy_wordings").iterdir()):
-                if idx==0:
-                    vectorprocessor = VectorProcessor(id=vectordb_id, create_collection=True)
+            for idx, f in enumerate((dir / "policy_wordings").iterdir()):
+                if idx == 0:
+                    vectorprocessor = VectorProcessor(
+                        id=vectordb_id, create_collection=True
+                    )
                     self.vectordb_id = vectordb_id
                 _ = vectorprocessor.index(pdf_path=f, id=f.stem, max_pages=max_pages)
                 vectorprocessor.milvus_manager.client.close()
@@ -524,17 +523,23 @@ class RAG:
 
     def search_documents(self, query):
         if self.vectordb_id is None:
-            raise Exception("Create the vector db first by invoking `create_vector_db`.")
+            raise Exception(
+                "Create the vector db first by invoking `create_vector_db`."
+            )
         try:
-            vectorprocessor = VectorProcessor(id=self.vectordb_id, create_collection=False)
+            vectorprocessor = VectorProcessor(
+                id=self.vectordb_id, create_collection=False
+            )
 
             search_results = vectorprocessor.search(search_queries=[query])[0]
 
-            check_res = vectorprocessor.milvus_manager.client.query(collection_name=self.vectordb_id,
-                                       filter=f"doc_id in {[d[1] for d in search_results]}",
-                                       output_fields=[ "doc_id", "doc"])
+            check_res = vectorprocessor.milvus_manager.client.query(
+                collection_name=self.vectordb_id,
+                filter=f"doc_id in {[d[1] for d in search_results]}",
+                output_fields=["doc_id", "doc"],
+            )
             vectorprocessor.milvus_manager.client.close()
-            img_path_doc_id = set((i['doc'], i['doc_id']) for i in check_res)
+            img_path_doc_id = set((i["doc"], i["doc_id"]) for i in check_res)
 
             logger.info("✅ Retrieved the images for answering query.")
             return img_path_doc_id
@@ -593,88 +598,3 @@ class RAG:
             return response.choices[0].message.content
         except Exception as err:
             return f"Unable to generate the final output due to: {err}."
-
-
-# %%
-# def main():
-#     """
-#     Main function for running the PDF search app in standalone mode.
-#     """
-#     user_id = {"user_uuid": None}
-#     app = RAG()
-#     app.upload_and_convert(
-#         state=user_id, file=PROJECT_ROOT_DIR / "data/PI-TOOL-WEB-SAMPLE.pdf"
-#     )
-#     logger.info(user_id)
-#     _, response = app.search_documents(
-#         state=user_id, query="what's JPGCCOMP allocation?"
-#     )
-#     logger.info(response)
-
-
-# %%
-# if __name__ == "__main__":
-#     main()
-
-# %%
-# app = RAG()
-# %%
-# for idx,f in enumerate((PROJECT_ROOT_DIR/"data/policy_wordings").iterdir()):
-#     if idx==0:
-#         vectorprocessor = VectorProcessor(id="policy_wordings", create_collection=True)
-#     pages = vectorprocessor.index(pdf_path=f, id=f.stem, max_pages=200)
-# %%
-# vectorprocessor = VectorProcessor(id="policy_wordings", create_collection=False)
-# # %%
-# query = "Secure 4 in 1 critical illness policy cancer coverage"
-# query_vec = vectorprocessor.colqwen_manager.process_text([query])[0]
-# # retrive only 4 as only 4 images can be inferenced at a time with QWEN 2.5 72B
-# search_res = vectorprocessor.milvus_manager.search(query_vec, topk=4) 
-# # # %%
-# # search_res
-# # # %%
-# # vectorprocessor.search([query])
-# # %%
-# check_res = vectorprocessor.milvus_manager.client.query(collection_name="policy_wordings",
-#                                        filter=f"doc_id in {[d[1] for d in search_res]}",
-#                                        output_fields=[ "doc_id", "doc"])
-# # %%
-# set((i['doc'], i['doc_id']) for i in check_res), search_res
-# # %%
-# search_params = {"metric_type": "IP", "params": {}}
-# results = vectorprocessor.milvus_manager.client.search(
-#     collection_name="policy_wordings",
-#     data=query_vec,
-#     limit=2,
-#     output_fields=["vector", "seq_id", "doc_id", "doc"],
-#     search_params=search_params,
-# )
-# # %%
-# results[0][1]
-# # %%
-# a = vectorprocessor.milvus_manager.client.query(
-#     collection_name="policy_wordings", filter="doc_id == 45", output_fields=["doc"]
-# )
-
-# # %%
-# a[3]
-# # %%
-# vectorprocessor.milvus_manager.client.query(
-#     collection_name="policy_wordings",
-#     filter="pk == 458295805050210631",
-#     output_fields=["doc", "doc_id"],
-# )
-# # %%
-# # We have to change the search to search by pk and not doc_id
-
-# %%
-# rag_app = RAG()
-# rag_app.vectordb_id = "policy_wordings"
-
-# %%
-# rag_app.create_vector_db()
-# %%
-
-# query = "what critical illnesses are covered under optima restore?"
-# rag_app.search_documents(query)
-# %%
