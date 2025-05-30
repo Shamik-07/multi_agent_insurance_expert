@@ -4,13 +4,14 @@ import re
 import shutil
 
 import gradio as gr
+from gradio_pdf import PDF
 from dotenv import load_dotenv
 from smolagents.memory import ActionStep, MemoryStep, FinalAnswerStep, PlanningStep
 from smolagents.models import ChatMessageStreamDelta
 from smolagents.gradio_ui import _process_action_step, _process_final_answer_step
 
 from src.insurance_assistants.agents import manager_agent
-from src.insurance_assistants.consts import PRIMARY_HEADING
+from src.insurance_assistants.consts import PRIMARY_HEADING, PROJECT_ROOT_DIR
 
 load_dotenv(override=True)
 # login(token=os.getenv(key="HF_TOKEN"))
@@ -170,7 +171,14 @@ class UI:
             ),
             gr.Button(interactive=False),
         )
-
+    
+    def interrupt_agent(self, session_state):
+        if "agent" not in session_state:
+            session_state["agent"] = manager_agent
+        agent = session_state["agent"]
+        agent.interrupt()
+        return
+    
     def launch(self, **kwargs):
         with gr.Blocks(fill_height=True) as demo:
 
@@ -194,6 +202,9 @@ class UI:
                             )
                             launch_research_btn = gr.Button(
                                 value="Run", variant="primary"
+                            )
+                            agent_interrup_btn = gr.Button(
+                                value="Interrupt", variant="stop"
                             )
 
                         # If an upload folder is provided, enable the upload feature
@@ -220,7 +231,8 @@ class UI:
                     # Add session state to store session-specific data
                     session_state = gr.State(
                         {}
-                    )  # Initialize empty state for each session
+                    )  
+                    # Initialize empty state for each session
                     stored_messages = gr.State([])
                     chatbot = gr.Chatbot(
                         label="Health Insurance Agent",
@@ -274,7 +286,13 @@ class UI:
                         inputs=None,
                         outputs=[text_input, launch_research_btn],
                     )
-
+                    agent_interrup_btn.click(
+                        fn=self.interrupt_agent,
+                        inputs=[session_state]
+                    )
+                    PDF(value=(PROJECT_ROOT_DIR / "data/policy_wordings/easy-health.pdf").as_posix(),
+                        label="PDF Viewer",
+                        show_label=True)
         demo.launch(debug=True, **kwargs)
 
 

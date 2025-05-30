@@ -1005,6 +1005,17 @@ wheels = [
 ]
 
 [[package]]
+name = "gradio-pdf"
+version = "0.0.22"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "gradio" },
+]
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/81/4c/8a9177ebdb02bb55892cc8903c21eada48f40d592a0152a25e9277238c35/gradio_pdf-0.0.22-py3-none-any.whl", hash = "sha256:6f710eca3464d2d37aee742eb2f10dbe76772ebe5dfcfb993da40c710c9ad1b5", size = 1356994, upload-time = "2025-01-31T00:10:12.086Z" },
+]
+
+[[package]]
 name = "greenlet"
 version = "3.2.2"
 source = { registry = "https://pypi.org/simple" }
@@ -1249,6 +1260,7 @@ dependencies = [
     { name = "colpali-engine" },
     { name = "crawlee", extra = ["all"] },
     { name = "duckduckgo-search" },
+    { name = "gradio-pdf" },
     { name = "huggingface-hub", extra = ["hf-xet"] },
     { name = "llama-index" },
     { name = "llama-index-llms-huggingface-api" },
@@ -1279,6 +1291,7 @@ requires-dist = [
     { name = "colpali-engine", specifier = ">=0.3.10" },
     { name = "crawlee", extras = ["all"], specifier = ">=0.6.9" },
     { name = "duckduckgo-search", specifier = ">=8.0.2" },
+    { name = "gradio-pdf", specifier = ">=0.0.22" },
     { name = "huggingface-hub", extras = ["hf-xet"], specifier = ">=0.32.0" },
     { name = "llama-index", specifier = ">=0.12.37" },
     { name = "llama-index-llms-huggingface-api", specifier = ">=0.4.3" },
