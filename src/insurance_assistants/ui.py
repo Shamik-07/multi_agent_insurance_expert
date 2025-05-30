@@ -8,10 +8,10 @@ from dotenv import load_dotenv
 from huggingface_hub import login
 from smolagents.gradio_ui import stream_to_gradio
 from src.insurance_assistants.agents import manager_agent
-from src.insurance_assistants.consts import PRIMARY_HEADING
+from src.insurance_assistants.consts import PRIMARY_HEADING, PROMPT_PREFIX
 
 load_dotenv(override=True)
-login(token=os.getenv(key="HF_TOKEN"))
+# login(token=os.getenv(key="HF_TOKEN"))
 
 
 
@@ -19,7 +19,7 @@ login(token=os.getenv(key="HF_TOKEN"))
 
 
 
-class GradioUI:
+class UI:
     """A one-line interface to launch your agent in Gradio"""
 
     def __init__(self, file_upload_folder: str | None = None):
@@ -32,7 +32,7 @@ class GradioUI:
         # Get or create session-specific agent
         if "agent" not in session_state:
             session_state["agent"] = manager_agent
-
+        prompt = PROMPT_PREFIX + prompt
         # Adding monitoring
         try:
             # log the existence of agent memory
@@ -45,7 +45,9 @@ class GradioUI:
             yield messages
 
             for msg in stream_to_gradio(
-                session_state["agent"], task=prompt, reset_agent_memory=False
+                agent=session_state["agent"],
+                task=prompt,
+                reset_agent_memory=False,
             ):
                 messages.append(msg)
                 yield messages
@@ -115,7 +117,7 @@ class GradioUI:
             gr.Textbox(
                 value="",
                 interactive=False,
-                placeholder="Please wait while Steps are getting populated",
+                placeholder="Please wait while the agent answers your question",
             ),
             gr.Button(interactive=False),
         )
@@ -134,15 +136,16 @@ class GradioUI:
                     with gr.Sidebar():
                         gr.Markdown(value=PRIMARY_HEADING)
                         with gr.Group():
-                            gr.Markdown("**Your request**", container=True)
+                            gr.Markdown("**Your question, please...**", container=True)
                             text_input = gr.Textbox(
                                 lines=3,
-                                label="Your request",
+                                label="Your question, please...",
                                 container=False,
                                 placeholder="Enter your prompt here and press Shift+Enter or press the button",
+                                # value=PROMPT_PREFIX
                             )
                             launch_research_btn = gr.Button(
-                                "Run", variant="primary"
+                                value="Run", variant="primary"
                             )
 
                         # If an upload folder is provided, enable the upload feature
@@ -154,9 +157,9 @@ class GradioUI:
                                 visible=False,
                             )
                             upload_file.change(
-                                self.upload_file,
-                                [upload_file, file_uploads_log],
-                                [upload_status, file_uploads_log],
+                                fn=self.upload_file,
+                                inputs=[upload_file, file_uploads_log],
+                                outputs=[upload_status, file_uploads_log],
                             )
 
                         gr.HTML("<br><br><h4><center>Powered by:</center></h4>")
@@ -172,7 +175,7 @@ class GradioUI:
                     )  # Initialize empty state for each session
                     stored_messages = gr.State([])
                     chatbot = gr.Chatbot(
-                        label="open-Deep-Research",
+                        label="Health Insurance Agent",
                         type="messages",
                         avatar_images=(
                             None,
@@ -180,51 +183,51 @@ class GradioUI:
                         ),
                         resizeable=False,
                         scale=1,
-                        elem_id="my-chatbot",
+                        elem_id="Insurance-Agent",
                     )
 
                     text_input.submit(
-                        self.log_user_message,
-                        [text_input, file_uploads_log],
-                        [stored_messages, text_input, launch_research_btn],
+                        fn=self.log_user_message,
+                        inputs=[text_input, file_uploads_log],
+                        outputs=[stored_messages, text_input, launch_research_btn],
                     ).then(
-                        self.interact_with_agent,
+                        fn=self.interact_with_agent,
                         # Include session_state in function calls
-                        [stored_messages, chatbot, session_state],
-                        [chatbot],
+                        inputs=[stored_messages, chatbot, session_state],
+                        outputs=[chatbot],
                     ).then(
-                        lambda: (
+                        fn=lambda: (
                             gr.Textbox(
                                 interactive=True,
                                 placeholder="Enter your prompt here and press the button",
                             ),
                             gr.Button(interactive=True),
                         ),
-                        None,
-                        [text_input, launch_research_btn],
+                        inputs=None,
+                        outputs=[text_input, launch_research_btn],
                     )
                     launch_research_btn.click(
-                        self.log_user_message,
-                        [text_input, file_uploads_log],
-                        [stored_messages, text_input, launch_research_btn],
+                        fn=self.log_user_message,
+                        inputs=[text_input, file_uploads_log],
+                        outputs=[stored_messages, text_input, launch_research_btn],
                     ).then(
-                        self.interact_with_agent,
+                        fn=self.interact_with_agent,
                         # Include session_state in function calls
-                        [stored_messages, chatbot, session_state],
-                        [chatbot],
+                        inputs=[stored_messages, chatbot, session_state],
+                        outputs=[chatbot],
                     ).then(
-                        lambda: (
+                        fn=lambda: (
                             gr.Textbox(
                                 interactive=True,
                                 placeholder="Enter your prompt here and press the button",
                             ),
                             gr.Button(interactive=True),
                         ),
-                        None,
-                        [text_input, launch_research_btn],
+                        inputs=None,
+                        outputs=[text_input, launch_research_btn],
                     )
 
         demo.launch(debug=True, **kwargs)
 
 
-GradioUI().launch()
+# UI().launch(share=False)

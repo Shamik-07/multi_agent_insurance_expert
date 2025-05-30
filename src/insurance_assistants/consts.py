@@ -14,6 +14,19 @@ Query: {query}
 PDF pages:
 """
 
-PRIMARY_HEADING = """# A multi-purpose agent
-This agent answers health insurance related questions from pre-ingested set of health insurance documents, search wikipedia and the web for general information.
+PRIMARY_HEADING = """# An Agentic RAG for Health Insurance Documents
+This agent answers health insurance related questions from pre-ingested set 
+of health insurance documents, search wikipedia, search the web
+and execute basic python code.
+"""
+
+PROMPT_PREFIX = """
+Apart from the instructions that we have given to you, FOLLOW the Additional Instructions below:
+```
+For any health insurance related queries, always use the `insurance_agent` first and return the results.
+You are allowed to rephrase any query and detail it if required. When in doubt always ask the user a follow up question.
+Don't assume anything.
+```
+Here's the query that you need to answer:
+
 """

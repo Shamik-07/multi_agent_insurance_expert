@@ -6,7 +6,7 @@ from smolagents import (
     VisitWebpageTool,
     WikipediaSearchTool,
     FinalAnswerTool,
-    GradioUI,
+    PythonInterpreterTool,
     Tool,
     ToolCallingAgent,
 )
@@ -19,6 +19,7 @@ from src.insurance_assistants.complex_rag import RAG
 
 _ = load_dotenv(dotenv_path=find_dotenv())
 rag_app = RAG()
+rag_app.vectordb_id = "policy_wordings"
 
 class InsuranceInfoRetriever(Tool):
     name = "InsuranceInfoRetriever"
@@ -109,7 +110,7 @@ wikipedia_agent = ToolCallingAgent(
 )
 
 manager_agent = CodeAgent(
-    tools=[FinalAnswerTool()],
+    tools=[FinalAnswerTool(), PythonInterpreterTool()],
     additional_authorized_imports=["os"],
     model=InferenceClientModel(
         model_id="Qwen/Qwen3-235B-A22B",

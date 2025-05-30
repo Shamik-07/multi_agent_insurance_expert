@@ -517,6 +517,7 @@ class RAG:
                     vectorprocessor = VectorProcessor(id=vectordb_id, create_collection=True)
                     self.vectordb_id = vectordb_id
                 _ = vectorprocessor.index(pdf_path=f, id=f.stem, max_pages=max_pages)
+                vectorprocessor.milvus_manager.client.close()
             return f"✅ Created the vector_db: milvus_{vectordb_id} under `src` dir."
         except Exception as err:
             return f"❌ Error creating vector_db: {err}"
@@ -532,6 +533,7 @@ class RAG:
             check_res = vectorprocessor.milvus_manager.client.query(collection_name=self.vectordb_id,
                                        filter=f"doc_id in {[d[1] for d in search_results]}",
                                        output_fields=[ "doc_id", "doc"])
+            vectorprocessor.milvus_manager.client.close()
             img_path_doc_id = set((i['doc'], i['doc_id']) for i in check_res)
 
             logger.info("✅ Retrieved the images for answering query.")
