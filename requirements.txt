@@ -315,7 +315,7 @@ numpy==2.2.6
     #   scipy
     #   torchvision
     #   transformers
-nvidia-cublas-cu12==12.4.5.8
+nvidia-cublas-cu12==12.9.0.13
     # via
     #   nvidia-cudnn-cu12
     #   nvidia-cusolver-cu12
