@@ -1913,15 +1913,15 @@ wheels = [
 
 [[package]]
 name = "llama-index-llms-huggingface-api"
-version = "0.4.3"
+version = "0.5.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "huggingface-hub" },
     { name = "llama-index-core" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/ff/d4/c4dc326930de97de6c6a77d2ac540529bd34cefc5b9c5d96a36b15e826d8/llama_index_llms_huggingface_api-0.4.3.tar.gz", hash = "sha256:76675150f6b0ce2dc43d41217e2c4f2ade34e2b9203128b37f88f43dc62fc745", size = 7696, upload-time = "2025-05-08T18:01:52.008Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/21/0c/ccf96de51b842fe1a6d5ccb666b54d78fe14ebb97f08dd82ff969c6b6a62/llama_index_llms_huggingface_api-0.5.0.tar.gz", hash = "sha256:87826a7ebc6946606f0c80007febd89688bd602622e2dbace452e0cde39a88bf", size = 7726, upload-time = "2025-05-30T00:09:14.426Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/bf/9c/da5a3d274ea186d6e57c722d726ebbe4d30d793fbdbe9f0bfc6c31d9c076/llama_index_llms_huggingface_api-0.4.3-py3-none-any.whl", hash = "sha256:66b50bea40dac11ee3129d47c82f52f6f568bc8ca87e933b7a87af74b4d6c106", size = 7450, upload-time = "2025-05-08T18:01:50.985Z" },
+    { url = "https://files.pythonhosted.org/packages/79/1d/be41914d77910f01a8608dadd6b8902548229e7bf7fd564f5f2fdf1c1f15/llama_index_llms_huggingface_api-0.5.0-py3-none-any.whl", hash = "sha256:b3ec0452c61be163fb934c3f507906717989dfa40d81a0b9489f3348e96b0979", size = 7489, upload-time = "2025-05-30T00:09:12.494Z" },
 ]
 
 [[package]]
