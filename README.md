@@ -19,7 +19,7 @@ A multi-agent framework, powered by Vision-Language Models (VLMs) and Retrieval 
 - [Running the Application](#running-the-application)
   - [Using the Gradio Web UI](#using-the-gradio-web-ui)
 - [Configuration](#configuration)
-- [License](#license)
+
 
 
 ## Overview
@@ -194,9 +194,4 @@ The primary way to interact with `multi_agent_insurance_expert` is through its G
 *   **Agent Models & Prompts:** Configured within `src/multi_agent_insurance_expert/agents.py` and `src/multi_agent_insurance_expert/consts.py`.
 
 
-
-## License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-Copyright (c) 2025 Shamik (Year may need adjustment based on actual copyright year).
 
