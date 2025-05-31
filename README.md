@@ -197,5 +197,5 @@ The primary way to interact with `multi_agent_insurance_expert` is through its G
 
 
 ## Resources
-[Slides](https://docs.google.com/presentation/d/1FqZReg4l_BtZv3Aq1IDV4HPApu_9-PvChDKTKSg1Sj0/edit?usp=sharing)
-[Demo](https://huggingface.co/spaces/Shamik/multi_agent_rag)
+* [Slides](https://docs.google.com/presentation/d/1FqZReg4l_BtZv3Aq1IDV4HPApu_9-PvChDKTKSg1Sj0/edit?usp=sharing)
+* [Demo](https://huggingface.co/spaces/Shamik/multi_agent_rag)
