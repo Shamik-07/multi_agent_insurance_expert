@@ -1,0 +1,41 @@
+# .github/workflows/dependabot-auto-merge.yml
+
+name: "Dependabot auto-merge"
+
+on:
+  pull_request_target:
+    types:
+      - opened
+      - synchronize
+      - reopened
+
+jobs:
+  dependabot:
+    if: ${{ github.actor == 'dependabot[bot]' || github.actor == 'dependabot-preview[bot]' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      # For Python projects using uv (optional, only needed if you want to test changes)
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Install uv
+        run: pip install uv
+
+      # Install dependencies
+      - name: Install dependencies with uv
+        run: uv pip install -r requirements.txt
+
+      # (Optional) Run your tests here if you want to validate PRs before auto-merging
+      # - name: Run tests
+      #   run: pytest
+
+      - name: Enable auto-merge for Dependabot PRs
+        uses: peter-evans/enable-pull-request-automerge@v3
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          merge-method: squash
