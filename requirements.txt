@@ -248,7 +248,7 @@ llama-index-llms-openai==0.3.44
     #   llama-index-multi-modal-llms-openai
     #   llama-index-program-openai
     #   llama-index-question-gen-openai
-llama-index-multi-modal-llms-openai==0.4.3
+llama-index-multi-modal-llms-openai==0.5.1
     # via llama-index
 llama-index-program-openai==0.3.1
     # via
