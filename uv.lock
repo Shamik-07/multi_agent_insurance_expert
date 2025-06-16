@@ -1801,7 +1801,7 @@ wheels = [
 
 [[package]]
 name = "llama-index"
-version = "0.12.39"
+version = "0.12.42"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "llama-index-agent-openai" },
@@ -1817,9 +1817,9 @@ dependencies = [
     { name = "llama-index-readers-llama-parse" },
     { name = "nltk" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/cf/6b/c66d6fba284b3f19f002ab7f61b717c46189bbd1c046ed87a786f1d96bf5/llama_index-0.12.39.tar.gz", hash = "sha256:8003bb10ea3d087b9e074232ec3d3ce59e50712ac26f9b5ff0c7519629ff5b1b", size = 8074, upload-time = "2025-05-30T23:56:11.327Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/5e/86/7e36d3f7b0606cba5e4862bb62f8e6bef91b7c45229f15262faf2c92f6e3/llama_index-0.12.42.tar.gz", hash = "sha256:d2bd2b9ea06bc42ebe74697aaa0b66c79bd3dee8ff5d06c53294d49ca44512e7", size = 8073, upload-time = "2025-06-12T04:59:38.313Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/62/72/02f3c5169efc75cc9466e7b6f4f90457616cfb54c35c99b1baa3ab11a84b/llama_index-0.12.39-py3-none-any.whl", hash = "sha256:f7f7236bb9d6c1765d2b4551389312b946b2e0939c39a215bae7452a99cd8d5c", size = 7087, upload-time = "2025-05-30T23:56:09.514Z" },
+    { url = "https://files.pythonhosted.org/packages/64/9a/3044c50dd7cd7340763ed25e5ee7ee59917281735725eb73f62fe110333e/llama_index-0.12.42-py3-none-any.whl", hash = "sha256:9a304b2bd71d6772fc6c2e9995e119815c00716fc98813b15ea79caee09f1fe2", size = 7085, upload-time = "2025-06-12T04:59:37.071Z" },
 ]
 
 [[package]]
@@ -1852,7 +1852,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-core"
-version = "0.12.39"
+version = "0.12.42"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "aiohttp" },
@@ -1880,9 +1880,9 @@ dependencies = [
     { name = "typing-inspect" },
     { name = "wrapt" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/f7/45/163806502804ff75ace474f868cc33158774c4eb31d565133f32932e930e/llama_index_core-0.12.39.tar.gz", hash = "sha256:0cca9de59953542a3c2f1db61327c5204e0b1e997f31f1200e49392b2879593a", size = 7292040, upload-time = "2025-05-30T22:21:08.449Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/d8/67/ef1fc8c3b0676b524fd6b67a0e3e082996d768d227ed2b4b39f78119253b/llama_index_core-0.12.42.tar.gz", hash = "sha256:cff21fe15610826997c876a6b1d28d52727932c5f9c2af04b23e041a10f40a24", size = 7292833, upload-time = "2025-06-12T03:07:06.791Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/dd/a3/583d80764df75aefc9885f28dcc06a0e5aefc993fa5318186e70f2340d73/llama_index_core-0.12.39-py3-none-any.whl", hash = "sha256:c255ed87aa85e43893f2bb05870b61ce7701d7a6a931d174ba925def5856b4c2", size = 7664906, upload-time = "2025-05-30T22:21:01.939Z" },
+    { url = "https://files.pythonhosted.org/packages/1f/92/dc47b702da141d0f617ee86d26b5bdb62ed9a52518d1a5f271e91337e4a7/llama_index_core-0.12.42-py3-none-any.whl", hash = "sha256:0534cd9a4f6113175aa406a47ae9a683b5a43fd55532e9dbbffa96838ff18e07", size = 7665930, upload-time = "2025-06-12T03:06:58.387Z" },
 ]
 
 [[package]]
