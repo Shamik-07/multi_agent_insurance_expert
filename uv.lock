@@ -1,5 +1,5 @@
 version = 1
-revision = 2
+revision = 3
 requires-python = ">=3.12"
 resolution-markers = [
     "python_full_version >= '3.13'",
@@ -576,7 +576,7 @@ wheels = [
 
 [[package]]
 name = "colpali-engine"
-version = "0.3.10"
+version = "0.3.12"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "numpy" },
@@ -585,11 +585,12 @@ dependencies = [
     { name = "requests" },
     { name = "scipy" },
     { name = "torch" },
+    { name = "torchvision" },
     { name = "transformers" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/0c/dc/3c29d88d1d790d518177d1468ff4b006d02487e17d19d9d5b1a32ca0766a/colpali_engine-0.3.10.tar.gz", hash = "sha256:0b454682f4cce9fe19059a324edfb42e95d19819a85525c82846002649309489", size = 146800, upload-time = "2025-04-18T16:51:57.338Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/90/2c/9272f497217d6308ab826dec2e53743f7bda733d26f234cd62eb717fd75a/colpali_engine-0.3.12.tar.gz", hash = "sha256:48443ed94ca9fcc433746fecf0c4061dab44c55e879d7de3ad6796103d1ca045", size = 165182, upload-time = "2025-07-16T10:17:08.857Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/95/3c/b52534e099f1b9b9ca8de4655705d9bfd415b1a2fc3fcd975d37ecaadcc3/colpali_engine-0.3.10-py3-none-any.whl", hash = "sha256:b88a801e2b32a94c15a4e09b979770bbc590dcf1bda746c14041514f3a6b853b", size = 58787, upload-time = "2025-04-18T16:51:55.287Z" },
+    { url = "https://files.pythonhosted.org/packages/2e/2f/bbafa50ad636b928467c67ba9bb0fee207cb6c9e65e82033a9a3ed950220/colpali_engine-0.3.12-py3-none-any.whl", hash = "sha256:74ab0bc1bf0993858a8d8afb240defb744d5530daba2493b419cdd927dd6291d", size = 73880, upload-time = "2025-07-16T10:17:07.486Z" },
 ]
 
 [[package]]
@@ -4013,7 +4014,7 @@ wheels = [
 
 [[package]]
 name = "transformers"
-version = "4.51.3"
+version = "4.53.3"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "filelock" },
@@ -4027,9 +4028,9 @@ dependencies = [
     { name = "tokenizers" },
     { name = "tqdm" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/f1/11/7414d5bc07690002ce4d7553602107bf969af85144bbd02830f9fb471236/transformers-4.51.3.tar.gz", hash = "sha256:e292fcab3990c6defe6328f0f7d2004283ca81a7a07b2de9a46d67fd81ea1409", size = 8941266, upload-time = "2025-04-14T08:15:00.485Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/f1/5c/49182918b58eaa0b4c954fd0e37c79fc299e5643e69d70089d0b0eb0cd9b/transformers-4.53.3.tar.gz", hash = "sha256:b2eda1a261de79b78b97f7888fe2005fc0c3fabf5dad33d52cc02983f9f675d8", size = 9197478, upload-time = "2025-07-22T07:30:51.51Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/a9/b6/5257d04ae327b44db31f15cce39e6020cc986333c715660b1315a9724d82/transformers-4.51.3-py3-none-any.whl", hash = "sha256:fd3279633ceb2b777013234bbf0b4f5c2d23c4626b05497691f00cfda55e8a83", size = 10383940, upload-time = "2025-04-14T08:13:43.023Z" },
+    { url = "https://files.pythonhosted.org/packages/41/b1/d7520cc5cb69c825599042eb3a7c986fa9baa8a8d2dea9acd78e152c81e2/transformers-4.53.3-py3-none-any.whl", hash = "sha256:5aba81c92095806b6baf12df35d756cf23b66c356975fb2a7fa9e536138d7c75", size = 10826382, upload-time = "2025-07-22T07:30:48.458Z" },
 ]
 
 [[package]]
