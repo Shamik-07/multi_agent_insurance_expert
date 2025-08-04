@@ -1,5 +1,5 @@
 version = 1
-revision = 2
+revision = 3
 requires-python = ">=3.12"
 resolution-markers = [
     "python_full_version >= '3.13'",
@@ -3071,7 +3071,7 @@ wheels = [
 
 [[package]]
 name = "pymilvus"
-version = "2.5.10"
+version = "2.5.14"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "grpcio" },
@@ -3082,9 +3082,9 @@ dependencies = [
     { name = "setuptools" },
     { name = "ujson" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/da/e2/88f126a08d8eefba7341e3eb323406a227146094aab7137a2b91d882e98d/pymilvus-2.5.10.tar.gz", hash = "sha256:cc44ad776aeab781ee4c4a4d334b73e746066ab2fb6722c5311f02efa6fc54a2", size = 1260364, upload-time = "2025-05-23T06:08:06.992Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/bb/f5/ab9309bd59d141d7977512b870eb5286ec80ced450ecdc5580b06f5fdf1a/pymilvus-2.5.14.tar.gz", hash = "sha256:ba831aa79d29feb3a5ff846c07a59015d0f995949d0dfd2f420554cda0261b98", size = 1270850, upload-time = "2025-07-21T16:19:07.74Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/b0/4b/847704930ad8ddd0d0975e9a3a5e3fe704f642debe97454135c2b9ee7081/pymilvus-2.5.10-py3-none-any.whl", hash = "sha256:7da540f93068871cda3941602c55227aeaafb66f2f0d9c05e8f9db783716b100", size = 227635, upload-time = "2025-05-23T06:08:05.397Z" },
+    { url = "https://files.pythonhosted.org/packages/58/39/e6574fa640583e33ab6e709d61bbad315130ca42dcbf449aa025c3789a63/pymilvus-2.5.14-py3-none-any.whl", hash = "sha256:0e3cb687fd0807770cafb59566d217998b2166edcfa11956dd6e3fbbe2136a0f", size = 236412, upload-time = "2025-07-21T16:19:05.556Z" },
 ]
 
 [[package]]
