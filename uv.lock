@@ -799,7 +799,7 @@ wheels = [
 
 [[package]]
 name = "crawlee"
-version = "1.6.1"
+version = "1.7.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "async-timeout" },
@@ -816,9 +816,9 @@ dependencies = [
     { name = "typing-extensions" },
     { name = "yarl" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/c6/fe/9bcec7451c8d321d9947dbfef9ea9cf6ea04c484c307c8c9f671df89f61a/crawlee-1.6.1.tar.gz", hash = "sha256:730b54580f66cd58dcd01d9b54f5eaa3684b9045f66407d919c536bc1c56151d", size = 25895791, upload-time = "2026-03-30T12:52:25.582Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/c4/13/10d822c282f7967f97111b4751b454a02a963373247dae925bd01872a0ee/crawlee-1.7.0.tar.gz", hash = "sha256:38035e31f196ae632e65275188ec382ded908a132a99613cb77e82888770bb24", size = 286528, upload-time = "2026-05-12T08:37:13.841Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/09/a0/3a6e942eddd15b91199d053c9f8f2689a831e57fce293d14c559804acbec/crawlee-1.6.1-py3-none-any.whl", hash = "sha256:d21ab6bea3a18d905a2e1ed3cae8c7df8c21003d1c534f5d056d93071ed00f3b", size = 341088, upload-time = "2026-03-30T12:52:23.634Z" },
+    { url = "https://files.pythonhosted.org/packages/d4/bd/9d69cb8156065f62bcb14ca68b118cbcbbfd3bb293c18fc2ee842b46e784/crawlee-1.7.0-py3-none-any.whl", hash = "sha256:fc969425f1ec977d02ddf68747aec9dad88daac506f677a942389b2b278ab1e9", size = 369875, upload-time = "2026-05-12T08:37:07.629Z" },
 ]
 
 [package.optional-dependencies]
@@ -846,6 +846,7 @@ all = [
     { name = "rich" },
     { name = "scikit-learn" },
     { name = "sqlalchemy", extra = ["asyncio"] },
+    { name = "stagehand" },
     { name = "typer" },
     { name = "wrapt" },
 ]
@@ -4696,6 +4697,26 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/28/e3/55dcc2cfbc3ca9c29519eb6884dd1415ecb53b0e934862d3559ddcb7e20b/stack_data-0.6.3.tar.gz", hash = "sha256:836a778de4fec4dcd1dcd89ed8abff8a221f58308462e1c4aa2a3cf30148f0b9", size = 44707, upload-time = "2023-09-30T13:58:05.479Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/f1/7b/ce1eafaf1a76852e2ec9b22edecf1daa58175c090266e9f6c64afcd81d91/stack_data-0.6.3-py3-none-any.whl", hash = "sha256:d5558e0c25a4cb0853cddad3d77da9891a08cb85dd9f9f91b9f8cd66e511e695", size = 24521, upload-time = "2023-09-30T13:58:03.53Z" },
+]
+
+[[package]]
+name = "stagehand"
+version = "3.20.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "anyio" },
+    { name = "distro" },
+    { name = "httpx" },
+    { name = "pydantic" },
+    { name = "sniffio" },
+    { name = "typing-extensions" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/9b/1b/f703463a04a227f10c19a1f79c0311597a7a374ad02065e2294eb54ebaef/stagehand-3.20.0.tar.gz", hash = "sha256:c862f2da2ed0ed958ca5c8aec743bcfecf4a944336cf30df68a715f1c18a4abb", size = 283951, upload-time = "2026-05-07T16:20:56.439Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/30/bf/a000e0d54009831e099a3d8dd0277ad638a15d0b4ead3a7d32d75677508b/stagehand-3.20.0-py3-none-macosx_10_9_x86_64.whl", hash = "sha256:03a9dbd4b5952106e0685d51c6879a14306d3172367400daee4954c0581e2e54", size = 34504378, upload-time = "2026-05-07T16:21:08.789Z" },
+    { url = "https://files.pythonhosted.org/packages/22/b7/bab837635ed381e5f1f3fbfa9636ec2670ca71727b720d4a00c69aebb46e/stagehand-3.20.0-py3-none-macosx_11_0_arm64.whl", hash = "sha256:72943f6056b0554770c54dabbce62ad9da1eb24ca1bf70da312e63a0802881c7", size = 33202451, upload-time = "2026-05-07T16:20:58.701Z" },
+    { url = "https://files.pythonhosted.org/packages/7a/5b/eb9623fa7e8627ed74b8f3f90e4076d29fb41531108b5141a966f9ff4a5f/stagehand-3.20.0-py3-none-manylinux2014_x86_64.whl", hash = "sha256:69cecb87b9f672e435f7297ab96dd6e81f23a4ec65bf0e5c00ce66a6b4601965", size = 37282736, upload-time = "2026-05-07T16:21:02.373Z" },
+    { url = "https://files.pythonhosted.org/packages/fa/32/8140daf343c9c150bc88a96d82c4540b6ae1f96c5cb0d4d89fcc1c438426/stagehand-3.20.0-py3-none-win_amd64.whl", hash = "sha256:110f231246847220e3e5fc06565042e6024e5fdc7094e4f6dd0328c63abd4c94", size = 30771429, upload-time = "2026-05-07T16:21:05.648Z" },
 ]
 
 [[package]]
